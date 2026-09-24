@@ -1,6 +1,6 @@
 # 走心机程序解读器（津上 B0206V）
 
-**在线使用（手机、电脑都能开）：** https://abraham121118.github.io/走心机程序解读器/
+**在线使用（手机、电脑都能开）：** https://abraham121118.github.io/tsugami-B0206-reader/
 
 也可以把仓库整个下载下来，双击 `index.html` 打开 —— **无需安装、可离线使用**（照片 OCR 功能需要联网）。
 
