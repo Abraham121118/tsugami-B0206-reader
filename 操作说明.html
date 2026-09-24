@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>津上 B0206V 常规操作及面板按钮说明</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#fff; --line:#e4e7ec; --ink:#1a1d24; --ink2:#5b6270; --ink3:#9aa1ae;
+  --g:#2563eb; --warn:#b45309; --danger:#dc2626;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.7 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;margin:0}
+header{background:#172033;color:#fff;padding:16px 24px}
+header h1{font-size:19px;margin:0}
+header .sub{font-size:12.5px;color:#93a0b8;margin-top:4px}
+main{max-width:960px;margin:0 auto;padding:20px 24px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin-bottom:16px}
+h2{font-size:16px;margin:0 0 12px;padding-bottom:8px;border-bottom:2px solid #dbeafe;color:#1e3a8a}
+h3{font-size:14px;margin:16px 0 6px;color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+th{text-align:left;background:#f8fafc;color:var(--ink2);font-weight:600;font-size:12.5px;padding:6px 10px;border:1px solid var(--line)}
+td{padding:6px 10px;border:1px solid var(--line);vertical-align:top}
+td b{white-space:nowrap}
+.kbd{display:inline-block;background:#eef2f7;border:1px solid #d5dce6;border-bottom-width:2px;border-radius:5px;padding:0 8px;font-family:Consolas,monospace;font-size:12.5px;font-weight:600;color:#334155}
+.step{display:flex;gap:10px;margin:6px 0}
+.step .no{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#e0e7ff;color:#3730a3;font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.note{font-size:12.5px;color:var(--warn);background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;margin:10px 0}
+.danger{font-size:12.5px;color:var(--danger);background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;margin:10px 0}
+.src{font-size:12px;color:var(--ink3);margin-top:8px}
+.tag{display:inline-block;border-radius:20px;padding:1px 9px;font-size:11px;margin-left:6px}
+.tag.local{background:#dcfce7;color:#166534}
+.tag.net{background:#fef3c7;color:#92400e}
+.tag.gen{background:#e0e7ff;color:#3730a3}
+a{color:var(--g)}
+</style>
+</head>
+<body>
+<header>
+  <h1>津上 B0206V 常规操作及面板按钮说明</h1>
+  <div class="sub">整理自：S205A 客户培训资料 2024（同系列机型）/ 网络津上走心机教学视频 / FANUC 车床系统通用操作 —— 具体按键名称与位置请以本机实际面板为准</div>
+</header>
+<main>
+
+<div class="card">
+  <h2>一、开机前的确认与开机</h2>
+  <h3>1. 通电前检查<span class="tag local">培训资料</span></h3>
+  <div class="step"><span class="no">1</span><div>机器额定电源电压 <b>AC200V ±10%</b>；初次通电前用相位旋转表确认 L1/L2/L3 (R·S·T) 相位顺序，<b>相位接错会导致错误动作和人身事故</b>。</div></div>
+  <div class="step"><span class="no">2</span><div>确认各处螺栓、连接器、空压配管已拧紧。</div></div>
+  <div class="step"><span class="no">3</span><div>确认外设（送料机、排屑机）配线配管正确；<b>先取下运输固定具（红色）</b>并妥善保管，移动机器前再装回。</div></div>
+  <h3>2. 环境与油液<span class="tag local">培训资料</span></h3>
+  <table>
+    <tr><th>项目</th><th>要求</th></tr>
+    <tr><td>环境温度</td><td>5~40℃；稳定高精度加工建议维持 20℃ 左右</td></tr>
+    <tr><td>湿度</td><td>75% 以下</td></tr>
+    <tr><td>导轨润滑油</td><td>1.8 升，ISO VG68 同级</td></tr>
+    <tr><td>主轴冷却油</td><td>8 升，ISO VG2 同级</td></tr>
+    <tr><td>空压源</td><td><b>0.4MPa 以上</b>，耗气约 40NL/min</td></tr>
+  </table>
+  <h3>3. 开机顺序</h3>
+  <div class="step"><span class="no">1</span><div>确认气压 0.4MPa 以上、油液正常。</div></div>
+  <div class="step"><span class="no">2</span><div>打开机床总电源（主断路器）→ 按 NC 电源接通按钮，等待系统启动。</div></div>
+  <div class="step"><span class="no">3</span><div>松开<span class="kbd">急停</span>（红色蘑菇钮，向右旋转弹出）。</div></div>
+  <div class="step"><span class="no">4</span><div>有报警先按<span class="kbd">复位 RESET</span>；切换到手轮回零模式，将 <b>X1/Z1（主轴侧）与 X2/Z2（副轴侧）各轴回参考点</b>，观察机械坐标归零。</div></div>
+  <div class="step"><span class="no">5</span><div>主轴低速试转（MDI 方式输入 <code>S100 M03;</code>）确认无异常后开始加工准备。</div></div>
+  <div class="note">⚠️ 机器长期停机后首件务必用单段+低倍率空跑，确认程序无误再正常加工。</div>
+</div>
+
+<div class="card">
+  <h2>二、面板认识<span class="tag gen">FANUC 通用</span></h2>
+  <h3>1. 模式选择旋钮（左上角）</h3>
+  <table>
+    <tr><th>模式</th><th>用途</th></tr>
+    <tr><td><b>EDIT</b> 编辑</td><td>编写、修改程序（PROG 键进入程序画面）</td></tr>
+    <tr><td><b>MEM / AUTO</b> 自动</td><td>运行存储器里的程序（循环启动）</td></tr>
+    <tr><td><b>MDI</b></td><td>手动输入单段指令执行（换刀、试转主轴、改参数时用）</td></tr>
+    <tr><td><b>HND</b> 手轮</td><td>手摇脉冲发生器移轴（对刀、找原点、导套更换）</td></tr>
+    <tr><td><b>JOG</b> 手动</td><td>按住轴方向键连续移动（配手动快速）</td></tr>
+    <tr><td><b>REF</b> 回零</td><td>开机后各轴回参考点</td></tr>
+  </table>
+  <h3>2. 键盘区常用键</h3>
+  <table>
+    <tr><th>按键</th><th>功能</th></tr>
+    <tr><td><span class="kbd">POS</span></td><td>位置画面（实际位置 / 机械坐标 / 剩余移动量）</td></tr>
+    <tr><td><span class="kbd">PROG</span></td><td>程序画面（编辑/目录/MDI 输入）；津上机用「显示」键可在主轴/副轴程序目录间切换</td></tr>
+    <tr><td><span class="kbd">OFS/SET</span></td><td>刀补、工件坐标系设定画面（对刀后输刀补；I/O 通道也在这里改）</td></tr>
+    <tr><td><span class="kbd">SYSTEM</span></td><td>参数画面（零点 1815、K 参数 PMC 维护都在这）</td></tr>
+    <tr><td><span class="kbd">MESSAGE</span></td><td>报警信息、操作履历</td></tr>
+    <tr><td><span class="kbd">CSTM/GRPH</span></td><td>定制画面 / 图形模拟</td></tr>
+    <tr><td><span class="kbd">RESET</span></td><td>复位：消除报警、中止程序运行、退回输入状态</td></tr>
+    <tr><td><span class="kbd">INPUT</span> <span class="kbd">INSERT</span> <span class="kbd">DELETE</span> <span class="kbd">ALTER</span> <span class="kbd">CAN</span> <span class="kbd">EOB</span></td><td>输入 / 插入 / 删除 / 替换 / 取消 / 换行(分号)</td></tr>
+  </table>
+  <h3>3. 操作区按键与旋钮</h3>
+  <table>
+    <tr><th>按键</th><th>功能</th></tr>
+    <tr><td><span class="kbd">循环启动</span>（绿色）</td><td>自动/MDI 模式下开始执行程序</td></tr>
+    <tr><td><span class="kbd">进给保持</span>（红色）</td><td>暂停进给（主轴不停），再按循环启动继续</td></tr>
+    <tr><td><span class="kbd">急停</span>（红蘑菇）</td><td>立即停止一切动作（断电式）；换夹头等作业前建议按下</td></tr>
+    <tr><td><b>进给倍率旋钮</b></td><td>0~120% 调整进给速度（空跑时调低）</td></tr>
+    <tr><td><b>主轴倍率旋钮</b></td><td>50~120% 调整主轴转速</td></tr>
+    <tr><td><b>快速倍率</b></td><td>G00 快移速度挡位</td></tr>
+    <tr><td><b>单段</b></td><td>每按一次循环启动只走一段，试加工必用</td></tr>
+    <tr><td><b>空运行 DRN</b></td><td>按设定速度快速跑程序（不切削，验证轨迹用）</td></tr>
+    <tr><td><b>跳过 /</b></td><td>打开后程序里 <code>/</code> 开头的段被跳过（津上接料、等待码等斜杠段）</td></tr>
+    <tr><td><b>选择停止</b></td><td>打开后 M01 生效（津上程序每段末尾基本都有 M01）</td></tr>
+  </table>
+  <h3>4. 津上操作面板（导套/夹头画面）<span class="tag local">培训资料</span></h3>
+  <div class="step"><span class="no">1</span><div>按<span class="kbd">定制键</span>显示主菜单画面，用<b>软键</b>（屏幕下方对应按键）选择项目。</div></div>
+  <div class="step"><span class="no">2</span><div>导套设置画面软键：<b>无导套 / 夹头更换 / 刹车关闭 / 旋转(旋转导套) / 电导套</b>，用软键【开】把「旋转」设为开，则「夹头更换」也联动变开。</div></div>
+  <div class="step"><span class="no">3</span><div>画面显示三组坐标：<b>实际位置 / 机械坐标 / 剩余移动量</b>，下方有刀具偏置数、热位补偿等项目。</div></div>
+  <div class="step"><span class="no">4</span><div><b>主轴 NC / 副轴 NC</b>：本机是双系统（主轴侧+副轴侧各自有程序），拷程序、看目录时先确认当前在哪个 NC 模式。</div></div>
+</div>
+
+<div class="card">
+  <h2>三、常用操作流程</h2>
+  <h3>1. 夹头更换<span class="tag local">培训资料</span></h3>
+  <div class="step"><span class="no">1</span><div>按下<span class="kbd">急停</span>再操作。</div></div>
+  <div class="step"><span class="no">2</span><div>安装：把适配器的<b>主轴销与适配器键槽对正</b>装入；装上夹头、锁紧螺帽。<b>主轴螺帽锁紧后才可调夹紧力</b>。</div></div>
+  <div class="step"><span class="no">3</span><div>夹紧力调试：用开闭棒插入气缸孔口手动拉紧，感到阻力后锁紧调节螺母端面螺丝，再用开闭棒确认夹紧力。左手不动右手顺时针松调节螺母端面螺丝；右手不动左手顺时针<b>调大夹紧力</b>。</div></div>
+  <div class="step"><span class="no">4</span><div>副轴夹头安装与夹紧力调试与主轴相同。</div></div>
+  <div class="step"><span class="no">5</span><div>面板切换：按<span class="kbd">操作</span>键进入导套模式更换界面 → 把「旋转导套」设为<b>开</b> →「夹头更换」随之变开 → 机械更换完成后把「夹头更换」选项<b>关闭</b>（此时会报 Z1 负向超程，手轮摇回加工范围内按<span class="kbd">复位</span>即可）。</div></div>
+  <h3>2. 无导套 ⇄ 旋转导套切换<span class="tag net">网络教程</span></h3>
+  <div class="step"><span class="no">1</span><div>手轮按 <b>J1</b> 将导套推至后退极限位置直至报警 → 按<span class="kbd">复位</span>消除报警。</div></div>
+  <div class="step"><span class="no">2</span><div>切换页面至「偏置」→ 按<span class="kbd">操作</span>键 → 打开「更换导头」功能。</div></div>
+  <div class="step"><span class="no">3</span><div>参数设置：关闭「无导套」、打开「更换导套」→ 再按<span class="kbd">复位</span>。</div></div>
+  <div class="step"><span class="no">4</span><div>手轮按 <b>Z1</b> 控制导套后退，看设备指示箭头到标记位置停止 → 执行「安全复位」。</div></div>
+  <div class="step"><span class="no">5</span><div>机械更换完成后：手轮按 J1 将夹头放入导套并顺时针拧紧 → 关闭「更换夹头」、打开「旋转导头」→ 切回正常操作页面。</div></div>
+  <h3>3. 对刀与刀补<span class="tag gen">FANUC 通用</span></h3>
+  <div class="step"><span class="no">1</span><div>手轮模式，用要对的刀试切外圆/端面（或对空定位）。</div></div>
+  <div class="step"><span class="no">2</span><div>量出尺寸，按<span class="kbd">OFS/SET</span> 进入刀补画面，找到对应刀号。</div></div>
+  <div class="step"><span class="no">3</span><div>X 向：输入测量直径（直径值）+ <span class="kbd">测量</span> 软键；Z 向同理。</div></div>
+  <div class="step"><span class="no">4</span><div>加工中微调尺寸改<b>磨损</b>列即可（津上程序大量用 T0606 这类刀号+刀补号形式）。</div></div>
+  <h3>4. 程序创建与编辑<span class="tag net">网络教程</span></h3>
+  <div class="step"><span class="no">1</span><div>模式旋到 <b>EDIT</b>，按<span class="kbd">PROG</span> 键。</div></div>
+  <div class="step"><span class="no">2</span><div>输入 <code>O</code> + 4 位数字（如 <code>O2310</code>）按 <span class="kbd">INSERT</span> 创建程序名。<b>程序名后不要加分号 EOB，否则报格式错误</b>。</div></div>
+  <div class="step"><span class="no">3</span><div>逐段输入程序，每段结尾按 <span class="kbd">EOB</span> + <span class="kbd">INSERT</span>。</div></div>
+  <div class="step"><span class="no">4</span><div>主轴程序、副轴程序是<b>两个独立程序</b>，分别在主轴 NC / 副轴 NC 下建立。</div></div>
+  <h3>5. 程序拷贝（U 盘 / CF 卡）<span class="tag local">培训资料</span></h3>
+  <div class="step"><span class="no">1</span><div>按<span class="kbd">OFS/SET</span> 设定键 → 切到 <b>MDI</b> 手动模式 → 光标移至 <b>I/O 通道</b>，输入通道号：<b>U 盘 = 17，CF 卡 = 04</b>。</div></div>
+  <div class="step"><span class="no">2</span><div>按<span class="kbd">SYSTEM</span> 参数键 → 软键黑色 + 键翻页找「所有 I/O」。</div></div>
+  <div class="step"><span class="no">3</span><div>按<span class="kbd">PROG</span> 程序键进入目录 → 按绿色<span class="kbd">操作</span>键进入读取任务栏。</div></div>
+  <div class="step"><span class="no">4</span><div>选择：<b>F 读取</b>=从 U 盘读入；<b>N 读取</b>=从 CF 卡读入；<b>输出</b>=机内程序拷到 U 盘/CF 卡。</div></div>
+  <div class="step"><span class="no">5</span><div><b>F 名称</b>设定 U 盘里的文件号，<b>P 设定</b>设定拷入机内的程序名 → 按<span class="kbd">执行</span>。</div></div>
+  <div class="danger">⚠️ 拷程序前确认当前处于<b>主轴 NC</b>还是<b>副轴 NC</b>模式——处于哪个模式就拷入哪一侧的程序！</div>
+  <h3>6. 试加工与自动加工</h3>
+  <div class="step"><span class="no">1</span><div>模式旋到 <b>MEM/AUTO</b>，PROG 键选中程序（津上程序 O 号为主轴程序，副轴程序由 /M9xxxx 呼叫）。</div></div>
+  <div class="step"><span class="no">2</span><div>首件：打开<b>单段</b>、进给倍率调低、打开<b>选择停止</b>（让 M01 生效），按循环启动逐步确认。</div></div>
+  <div class="step"><span class="no">3</span><div>空跑验证：打开<b>空运行 DRN</b>（不装料）快跑程序查轨迹和报警。</div></div>
+  <div class="step"><span class="no">4</span><div>确认无误后关单段、倍率归位，正常加工。津上程序每个工序段末尾都有 M01，配合选择停止可逐段检查。</div></div>
+  <h3>7. 报警处理</h3>
+  <table>
+    <tr><th>报警类型</th><th>处理</th></tr>
+    <tr><td>一般报警</td><td>排除原因后按 <span class="kbd">RESET</span> 复位</td></tr>
+    <tr><td>OT 超程报警</td><td>手轮往反方向摇出超程位置再复位；注意培训资料提示：<b>刀尖朝向负方向侧可能造成 OT 报警</b>（G02/G03 编程时刀尖方向要符合）</td></tr>
+    <tr><td><code>#3000</code> 宏报警</td><td>宏程序里人为设定的报警（如 M94 切料头的 <code>T17_POS ERROR</code>=切断刀不在挡料位置），按报警提示处理对应问题</td></tr>
+    <tr><td>急停报警</td><td>旋出急停按钮后按复位</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>四、常用参数<span class="tag net">网络教程</span><span class="tag local">培训资料</span></h2>
+  <table>
+    <tr><th>参数</th><th>说明</th></tr>
+    <tr><td><b>K 参数（PMC 维护）</b></td><td>功能开关，取值只有 0（未开通）/1（已开通）。路径：参数页面 → 向右扩展 → 再扩展 → <b>PMC 维护</b> → 向右扩展即见 K 参数。命名如 <b>K3.0</b>＝K3 行第 0 列、<b>K9.6</b> 通常为分度参数。培训资料里 G500 侧面孔倒角要求 <b>K99#3=1</b> 功能才有效——这列参数动之前先记下原值！</td></tr>
+    <tr><td><b>1815 号参数（APZ）</b></td><td>零点丢失后重设：手轮把轴摇到机床出厂缺口标记 → MDI 方式参数写入开关打 1 → 参数画面搜 1815 → 该轴 APZ 改 1 → 提示关机重启 → 看机械坐标确认 → 参数开关打回 0 → 复位。</td></tr>
+    <tr><td><b>I/O 通道</b></td><td>U 盘 = 17，CF 卡 = 04（程序拷贝用）</td></tr>
+    <tr><td><b>写参数</b></td><td>参数画面里改为 1 才能改参数，改完务必改回 0</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>五、本机规格速览（B0206 系列）<span class="tag local">培训资料</span></h2>
+  <table>
+    <tr><th>项目</th><th>数值</th></tr>
+    <tr><td>夹持棒材直径</td><td>标配 φ3~20mm（选配 φ3~25mm）</td></tr>
+    <tr><td>最大加工长度</td><td>旋转导套 80mm（选配）/135mm；无导套 45/70mm；固定导套 250mm（选配）</td></tr>
+    <tr><td>主轴转速</td><td>200~10,000 min⁻¹</td></tr>
+    <tr><td>背轴转速</td><td>200~12,000 min⁻¹</td></tr>
+    <tr><td>导套转速（选配）</td><td>200~8,000 min⁻¹</td></tr>
+    <tr><td>动力头转速</td><td>横向 200~6,000 / 背驱动 200~8,000 min⁻¹</td></tr>
+    <tr><td>快速移动速度</td><td>32m/min（X1：24m/min）</td></tr>
+    <tr><td>刀位数</td><td>40 支（标配 12×12 方刀 7 刀位 + 门架式钻孔座 22×5 + 一体式排刀座 12×7 + 双向 3 轴动力头等）</td></tr>
+    <tr><td>主轴最大钻孔/螺纹孔</td><td>φ12 / M10（主轴侧）、φ8 / M6（背面刀台侧）</td></tr>
+    <tr><td>动力头最大钻孔/螺纹孔</td><td>φ8 / M6</td></tr>
+    <tr><td>电源容量</td><td>15kVA</td></tr>
+  </table>
+  <div class="src">资料来源：<a href="https://www.snm0516.aisee.tv/video/BV1dZqGBQEg7/">走心机速成教学（B站）</a>、<a href="https://www.douyin.com/video/7470967988024282383">津上走心机无导套换旋转导套方法（抖音）</a>、<a href="https://en.industryarena.com/forum/fanuc-tsugami-0g-b-controller--61287.html">FANUC/Tsugami 控制说明（industryarena 论坛）</a>，以及本地 S205A 客户培训资料 2024（津上同系列机型）。<br>⚠️ 本页供参考：B0205-III/S205A 与 B0206V 同系列但细节可能有差异，具体按键位置、参数号请以本机操作说明书为准。</div>
+</div>
+
+</main>
+</body>
+</html>

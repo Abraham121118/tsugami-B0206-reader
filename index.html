@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>走心机程序解读器 · 津上 B0206V</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --line:#e4e7ec; --ink:#1a1d24; --ink2:#5b6270; --ink3:#9aa1ae;
+  --g:#2563eb; --m:#d97706; --t:#7c3aed; --f:#059669; --macro:#0d9488; --addr:#6b7280;
+  --warn:#b45309; --danger:#dc2626; --ok:#16a34a; --hl:#fef3c7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.6 "Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+header{background:#172033;color:#fff;padding:14px 22px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;font-weight:600}
+header .sub{font-size:12px;color:#93a0b8}
+.wrap{display:flex;gap:14px;padding:14px 22px;max-width:1500px;margin:0 auto;align-items:flex-start}
+.left{width:360px;flex-shrink:0;position:sticky;top:14px;display:flex;flex-direction:column;gap:12px}
+.right{flex:1;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card h2{font-size:13px;margin:0 0 10px;color:var(--ink);font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.card h2 .tip{font-size:11px;color:var(--ink3);font-weight:400}
+textarea{width:100%;height:340px;border:1px solid var(--line);border-radius:8px;padding:10px;font:13px/1.5 Consolas,"Courier New",monospace;resize:vertical;color:var(--ink);background:#fbfcfe}
+textarea:focus{outline:2px solid #bfdbfe;border-color:#60a5fa}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+.btn:hover{background:#f3f4f6}
+.btn.primary{background:var(--g);border-color:var(--g);color:#fff}
+.btn.primary:hover{background:#1d4ed8}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.drop{border:1.5px dashed #c3cad6;border-radius:8px;padding:16px;text-align:center;color:var(--ink3);font-size:12px;background:#fafbfd}
+.drop.over{border-color:var(--g);background:#eff6ff;color:var(--g)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:7px 14px;border:none;background:none;font-size:13px;color:var(--ink2);cursor:pointer;border-radius:8px 8px 0 0;font-family:inherit}
+.tab.active{background:var(--card);border:1px solid var(--line);border-bottom-color:var(--card);color:var(--g);font-weight:600;margin-bottom:-1px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--ink3);font-weight:500;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid #eef0f4;vertical-align:top}
+tr:hover td{background:#fafbfd}
+.lineno{color:var(--ink3);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:12px;width:44px}
+code.raw{font-family:Consolas,"Courier New",monospace;font-size:12.5px;color:#111827;word-break:break-all}
+.chip{display:inline-block;border-radius:5px;padding:0 6px;margin:1px 2px 1px 0;font-family:Consolas,monospace;font-size:12px;font-weight:600;cursor:help}
+.chip.G{background:#dbeafe;color:#1e40af}
+.chip.M{background:#fef3c7;color:#92400e}
+.chip.T{background:#ede9fe;color:#5b21b6}
+.chip.F{background:#d1fae5;color:#065f46}
+.chip.macro{background:#ccfbf1;color:#0f766e}
+.chip.addr{background:#eef0f4;color:#4b5563}
+.chip.num{background:#fdf2f8;color:#9d174d}
+.mn{color:var(--ink2);font-size:12.5px}
+.mn b{color:var(--ink)}
+.seg{border:1px solid var(--line);border-radius:8px;margin-bottom:10px;overflow:hidden}
+.seg-head{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#f8fafc;border-bottom:1px solid var(--line);font-size:12px}
+.seg-tag{font-weight:600;font-size:12.5px}
+.seg-head .meta{color:var(--ink3);font-size:11px;font-variant-numeric:tabular-nums}
+.seg pre{margin:0;padding:10px 12px;font:12px/1.7 Consolas,monospace;color:#374151;overflow-x:auto;background:#fff}
+.seg .exp{padding:8px 12px;border-top:1px dashed #e5e9f0;color:var(--ink2);font-size:12px;background:#fbfcfe}
+.badge{display:inline-block;border-radius:20px;padding:2px 9px;font-size:11px;background:#eef2ff;color:#4338ca;margin-left:8px}
+.toolrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #f0f2f6;font-size:12.5px}
+.toolrow .chip{margin:0}
+.formula{border-left:3px solid #c7d2fe;background:#f8faff;padding:9px 12px;border-radius:0 8px 8px 0;margin-bottom:8px;font-size:13px}
+.formula b{color:#3730a3}
+.note{font-size:12px;color:var(--warn);background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;margin-top:8px}
+.ocrbox{margin-top:8px;display:none}
+.ocrbox img{max-width:100%;max-height:180px;border-radius:6px;border:1px solid var(--line)}
+.kbd{background:#eef0f4;border-radius:4px;padding:1px 6px;font-family:Consolas,monospace;font-size:12px}
+.dict-edit td input{width:100%;border:1px solid var(--line);border-radius:5px;padding:4px 6px;font-size:12.5px;font-family:inherit}
+.dict-edit td input[data-k=code]{font-family:Consolas,monospace;width:70px}
+small.src{color:var(--ink3);font-size:11px}
+.stats-cat{font-size:12px;color:var(--ink3);margin:10px 0 4px;font-weight:600}
+@media(max-width:900px){.wrap{flex-direction:column}.left{width:100%;position:static}}
+</style>
+</head>
+<body>
+<header>
+  <h1>走心机程序解读器</h1>
+  <span class="sub">津上 B0206V 系列 · G/M 代码逐行解释 · 资料来自车间培训文档 2024 · 打开即用，无需安装</span>
+  <a href="操作说明.html" style="color:#93c5fd;font-size:12.5px;margin-left:auto;text-decoration:none;border:1px solid #3b4a66;border-radius:6px;padding:3px 10px">📖 常规操作及面板按钮说明</a>
+</header>
+
+<div class="wrap">
+  <!-- ============ 左侧：输入 ============ -->
+  <div class="left">
+    <div class="card">
+      <h2>程序输入 <span class="tip">粘贴 / 拖入 .nc .txt 文件 / 拖入照片OCR</span></h2>
+      <textarea id="src" placeholder="把程序粘贴到这里，或把程序文件拖进下方区域…
+支持：津上/FANUC 车床与走心机程序（G/M/T/S/F、宏程序 #变量、IF/WHILE）"></textarea>
+      <div class="btnrow" style="margin-top:8px">
+        <button class="btn primary" id="btnParse">解读</button>
+        <button class="btn" id="btnSample">载入示例程序</button>
+        <button class="btn" id="btnClear">清空</button>
+      </div>
+      <div class="drop" id="drop">
+        把 <b>.nc / .txt 程序文件</b> 或 <b>屏幕照片</b> 拖到这里<br>
+        <span style="font-size:11px">或</span>
+        <button class="btn" style="margin-top:6px" id="btnFile">选择文件…</button>
+        <button class="btn" style="margin-top:6px" id="btnPhoto">选择照片（OCR 识别）</button>
+      </div>
+      <div class="ocrbox" id="ocrbox">
+        <h2 style="margin:8px 0 6px">照片预览 / OCR 结果</h2>
+        <img id="ocrImg" alt="">
+        <div id="ocrStatus" style="font-size:12px;color:var(--ink2);margin:6px 0"></div>
+        <div class="btnrow"><button class="btn primary" id="btnOcr">开始识别</button>
+        <button class="btn" id="btnOcrUse">用识别结果替换程序框</button></div>
+        <textarea id="ocrText" style="height:140px;margin-top:6px" placeholder="识别结果（可直接修改，改完点“用识别结果替换程序框”再点“解读”）"></textarea>
+      </div>
+      <div class="note" id="ocrNote" style="display:none">
+        ⚠️ 照片 OCR 需要联网（首次会下载中文识别模型），屏幕照片有反光、字符 0/O 易混，识别结果<b>务必核对修改后再解读</b>。最可靠的方式是复制程序文件或粘贴文本。
+      </div>
+      <input type="file" id="fileIn" accept=".nc,.txt,.prg,.cnc,.min,.pim,text/plain" style="display:none">
+      <input type="file" id="photoIn" accept="image/*" style="display:none">
+    </div>
+    <div class="card">
+      <h2>关于本工具</h2>
+      <div style="font-size:12.5px;color:var(--ink2)">
+        代码含义基于津上培训教材（S205A 客户培训 2024、G 代码使用方法 2023-08-11、G176/G814/G8.5 功能说明等）与 FANUC 标准整理。
+        津上专用 M 码可能因机型配置不同而不同（B0205-Ⅲ 与 S205A 个别码不同），如与你机器不符，请在「代码字典」页修改——修改会保存在本机浏览器里。
+        带 <span class="badge">津上</span> 标记的是津上专用码；<span class="badge">选配</span> 表示需选配硬件/功能开通。
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 右侧：结果 ============ -->
+  <div class="right">
+    <div class="tabs">
+      <button class="tab active" data-tab="lines">逐行解读</button>
+      <button class="tab" data-tab="seg">工序分段</button>
+      <button class="tab" data-tab="stat">代码统计</button>
+      <button class="tab" data-tab="dict">代码字典</button>
+      <button class="tab" data-tab="formula">公式速查</button>
+    </div>
+
+    <div class="card" id="pane-lines">
+      <h2>逐行解读 <span class="tip">鼠标悬停彩色代码块看参数说明 · 点击行号可跳到原程序行</span></h2>
+      <div id="outLines"><p class="mn" style="padding:20px 0;text-align:center">← 先在左侧粘贴或拖入程序，点「解读」</p></div>
+    </div>
+
+    <div class="card" id="pane-seg" style="display:none">
+      <h2>工序分段 <span class="tip">按换刀 / 挡料 / 切断 / 接料 / 极坐标等自动分段</span></h2>
+      <div id="outSeg"></div>
+    </div>
+
+    <div class="card" id="pane-stat" style="display:none">
+      <h2>代码统计 <span class="tip">本程序用到的所有代码及次数</span></h2>
+      <div id="outStat"></div>
+    </div>
+
+    <div class="card" id="pane-dict" style="display:none">
+      <h2>代码字典 <span class="tip">含义错了？直接改表格。改动自动保存在本机浏览器</span></h2>
+      <div class="btnrow" style="margin-bottom:10px">
+        <button class="btn" id="btnDictAdd">新增一行</button>
+        <button class="btn" id="btnDictExport">导出字典 JSON</button>
+        <button class="btn" id="btnDictImport">导入字典 JSON</button>
+        <button class="btn" id="btnDictReset">恢复内置默认</button>
+        <input type="file" id="dictIn" accept=".json" style="display:none">
+      </div>
+      <div id="outDict"></div>
+    </div>
+
+    <div class="card" id="pane-formula" style="display:none">
+      <h2>公式速查 <span class="tip">培训教材里常用的经验公式</span></h2>
+      <div id="outFormula"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   一、知识库（内置字典）
+   来源：S205A 客户培训资料 2024 / G代码使用方法 2023-08-11 /
+        G176 螺纹断屑 / G814 宏断屑 / B012 M94 / 振动切削说明 / 极坐标手顺书
+   ============================================================ */
+const DICT_DEFAULT = [
+// ---- G 码：运动 ----
+{code:"G00",name:"快速定位",args:"X(U) Z(W) Y(V) C — 各轴同时快速移动",note:"走心机常用退刀位 X120.0 / X138.0（不同机型原点不同）",src:"FANUC"},
+{code:"G01",name:"直线插补",args:"X(U) Z(W) Y(V) C F — 以进给 F 切削到终点",note:"X 是直径值；省略的轴保持不动；X/Z 同时出现即走斜线",src:"FANUC"},
+{code:"G02",name:"圆弧插补·顺时针",args:"X(U) Z(W) R F（或 I K 圆心）",note:"走心机假想刀尖方向决定顺逆（见培训资料刀尖方向图）",src:"FANUC"},
+{code:"G03",name:"圆弧插补·逆时针",args:"X(U) Z(W) R F（或 I K 圆心）",note:"",src:"FANUC"},
+{code:"G04",name:"暂停(延时)",args:"X / U = 秒，P = 毫秒",note:"切槽、夹头动作后常用 G4U0.2 等待动作完成",src:"FANUC"},
+{code:"G28",name:"返回参考点",args:"U/W/X/Z/H — 例 G28H0.0=C轴模式原点；G28W0.0=副轴Z回原点",note:"侧面动力头加工前先 G28H0.0 回 C 轴原点",src:"津上/FANUC"},
+{code:"G32",name:"螺纹切削(单段)",args:"X(U) Z(W) F=螺距",note:"走心机常用宏循环车螺纹：G66P0001 + X… 逐刀逼近",src:"FANUC"},
+{code:"G17",name:"X-Y 平面选择",args:"",note:"",src:"FANUC"},
+{code:"G18",name:"Z-X 平面选择",args:"",note:"走心机主轴侧默认平面",src:"FANUC"},
+{code:"G19",name:"Y-Z 平面选择",args:"",note:"",src:"FANUC"},
+{code:"G40",name:"刀尖圆弧半径补偿·取消",args:"",note:"G12.1/G13.1 切换前后必须先 G40",src:"FANUC"},
+{code:"G41",name:"刀尖圆弧半径补偿·左",args:"D=刀补号",note:"铣轮廓常用，改磨损补偿值即可微调尺寸",src:"FANUC"},
+{code:"G42",name:"刀尖圆弧半径补偿·右",args:"D=刀补号",note:"",src:"FANUC"},
+{code:"G50",name:"主轴最高转速钳制 / 坐标系偏移",args:"S=最高转速(配G96)；或轴偏移例 G50W30.0",note:"拉料后 G50W30.0 把拉料长度偏移进坐标系",src:"FANUC"},
+{code:"G96",name:"恒线速",args:"S=线速度 m/min",note:"与 G50 配合使用（钳最高转速）",src:"FANUC"},
+{code:"G97",name:"恒转速",args:"S=r/min",note:"",src:"FANUC"},
+{code:"G98",name:"每分进给",args:"F=mm/min",note:"动力头(旋转刀具)加工用 G98；侧面攻丝除外",src:"FANUC"},
+{code:"G99",name:"每转进给",args:"F=mm/rev",note:"主轴车削默认；攻丝循环固定 G99 模式",src:"FANUC"},
+// ---- G 码：固定循环 ----
+{code:"G70",name:"内外径精加工循环",args:"P/Q=轮廓起止段号 F=进给",note:"配合 G71 轮廓段使用",src:"FANUC"},
+{code:"G71",name:"内外径粗车循环(两段式)",args:"第1段 G71 U(每刀切深·半径) R(退刀量)；第2段 G71 P(起始段号) Q(结束段号) U(X向余量) W(Z向余量) F(进给)",note:"轮廓写在 P~Q 段号之间；G70 再精车",src:"津上/FANUC"},
+{code:"G74",name:"端面切槽(啄式)循环",args:"第1段 G74 R(退刀量)；第2段 G74 Z(终点) X(槽底) P(X步进) Q(Z步进) F",note:"P/Q 单位 μm（P1000=1mm）",src:"FANUC"},
+{code:"G75",name:"外径/内径切槽循环",args:"第1段 G75 R(退刀量)；第2段 G75 X(槽底) Z(终点) P(X切深) Q(Z移动) F",note:"例 G75 X6.1 Z13.9 P1500 Q1200 F0.05",src:"津上/FANUC"},
+{code:"G76",name:"螺纹复合循环",args:"第1段 G76 P(m)(r)(a) Q(最小切深) R(精修余量)；第2段 G76 X(底径) Z(终点) P(牙高) Q(首刀切深) F(螺距)",note:"P021060=精车2刀/退尾0/牙型角60°；牙高 P≈0.65×螺距×1000(μm)",src:"FANUC"},
+{code:"G80",name:"钻孔固定循环·取消",args:"",note:"配合 G83/G84/G87 使用",src:"FANUC"},
+{code:"G83",name:"正面钻孔循环",args:"Z=钻孔深度 Q=每刀进给量 P=孔底停顿(ms) F=进给",note:"钻孔深度=所需深度+钻头半径/1.73；G80 取消",src:"津上/FANUC"},
+{code:"G84",name:"正面攻丝循环",args:"Z=攻丝深度 F=螺距 P=孔底停顿",note:"攻丝深度=螺纹深度+2个丝锥无效牙；需先 M29 Sxxx 刚性攻丝",src:"津上/FANUC"},
+{code:"G87",name:"侧面钻孔循环(动力头)",args:"X=钻孔深度 Q=每刀进给量 P=孔底停顿 F=进给",note:"H=C轴定位角度，配 M82/M83(主轴制动) 与 G98；G80 取消",src:"津上/FANUC"},
+{code:"G88",name:"侧面攻丝循环(动力头)",args:"X=攻丝深度 F=螺距",note:"",src:"津上/FANUC"},
+{code:"G90",name:"外径/内径车削循环",args:"X(终点) Z(终点) F(进给) R(锥度·可选)",note:"仅台阶式开粗，无法仿形；循环结束自动回起点",src:"津上/FANUC"},
+{code:"G92",name:"螺纹车削循环",args:"X(每刀牙底) Z(终点) F(螺距)",note:"每行给新 X 值切一刀；底径≈大径−1.3×螺距，最终以通止规为准",src:"津上/FANUC"},
+{code:"G184",name:"横向刚性攻丝循环",args:"",note:"",src:"津上"},
+{code:"G284",name:"后驱(侧面)刚性攻丝循环",args:"X=攻丝深度 Q=孔底停顿(秒) F=螺距",note:"配 M129 Sxxx 使用；例 G284 X4.0 Q0.5 F0.7",src:"津上"},
+// ---- 津上专用 G 码 ----
+{code:"G12.1",name:"极坐标插补·开",args:"",note:"端面动力头铣形(无Y轴或行程不够时)；区间内只能用 G1，出现 G0 报警；开关前后需 G40；X 按直径值、C 按半径值(按刀具中心编程)",src:"津上/选配"},
+{code:"G13.1",name:"极坐标插补·取消",args:"",note:"",src:"津上/选配"},
+{code:"G51.2",name:"多边形铣削·开",args:"P=铣刀刀头数 Q=圈数比(主轴一圈动力头转几圈，负号=反向)",note:"例六边形双刀片铣刀：P1 Q-3（3=6边÷2刀头）；先 G50 CDF[#5024] 读动力头角度再 G0 CDF0.0 相位归零",src:"津上"},
+{code:"G50.2",name:"多边形铣削·取消",args:"",note:"",src:"津上"},
+{code:"G65",name:"宏程序调用",args:"P=宏程序号 + 传参字母",note:"津上内置 O9010=侧面孔均匀倒角宏：G65 P9010 C(倒角量) D(孔径) R(材料直径) U(切深) X(X终点) Z(Z定位) F(角度)",src:"津上/FANUC"},
+{code:"G66",name:"模态宏调用·开",args:"P=宏程序号",note:"此后每段移动都调用该宏，G67 取消；例 G66P0001 螺纹循环宏",src:"FANUC"},
+{code:"G67",name:"模态宏调用·取消",args:"",note:"",src:"FANUC"},
+{code:"G150",name:"坐标系设定(平端面余量)",args:"Z=预留的平端面余量",note:"G300 挡料后只设定 Z1 轴，例 G150 Z-0.1",src:"津上"},
+{code:"G176",name:"螺纹断屑车削循环",args:"X(U) Z(W)=螺纹终点 D=分层切削量(半径) E=退刀高度(半径,缺省0.3) I=螺纹高度(半径) K=断屑长度(K×F,缺省1×F) R=锥螺纹角度(0=直螺纹) F=螺距 Q=起刀角度",note:"津上振荡断屑螺纹循环，仅单牙刀片；参数5130倒角距离/5131倒角角度/5141精修余量",src:"津上"},
+{code:"G300",name:"加工原点设置(挡料)",args:"X=-1.0 Z=挡料位置(工件长度+切断刀宽+0.5余量) T=挡料刀具号(如T0700)",note:"切断刀挡料，定 Z1 加工长度；挡料前先 M11 松夹头",src:"津上"},
+{code:"G310",name:"加工原点复位",args:"Z=复位位置 T=刀具号",note:"副轴侧程序头 G310 Z300.0 T9900 复位 Z2 原点（B0205-Ⅲ 为 Z192.0 T2100）",src:"津上"},
+{code:"G500",name:"侧面孔外径均匀倒角",args:"(宏程序指令，B0205-Ⅲ/S205A/B0327W 标配)",note:"侧面孔口外圆周倒角，需宏版本支持（K99#3=1 功能有效）",src:"津上"},
+{code:"G501",name:"侧面孔内径均匀倒角",args:"E=加工方向(前驱顺铣E2.0逆铣E3.0/后驱相反) Y=Y向孔中心(必须Y0.0) Z=Z向孔中心 M=工件内径 H=孔径 C=倒角大小 W=间隙 R=刀柄半径 F=进给(mm/min)",note:"",src:"津上"},
+{code:"G811",name:"振动切削 TYPE1",args:"X Z=切削终点 F=进给 P Q K=振动参数",note:"津上振动切削(老格式)，G8.5 为新格式",src:"津上"},
+{code:"G814",name:"宏断屑车削",args:"X(U) Y(V) Z(W)=终点 Q=断屑前进量(屑长度) R=断屑回退量 F=进给(每转) J=回退速率(缺省=F) K=回退驻留时间(秒,可省)",note:"非模态仅当前行；支持直线(外径/锥度/切槽/钻孔)，不支持圆弧；津上自主功能免费",src:"津上"},
+{code:"G8.5",name:"振动切削 TYPE2",args:"G8.5 P2 Z0 I(振幅) K(频率系数) 开 / G8.5 P0 关",note:"切削路径带振荡实现断屑；振动频率 f0=S×I/60 (Hz)，例 S4500 I0.5→37.5Hz；I 可选0.5/1.5/2.5…",src:"津上"},
+// ---- M 码 ----
+{code:"M00",name:"程序停止",args:"",note:"",src:"FANUC"},
+{code:"M01",name:"选择停止",args:"",note:"面板「选择停止」开才有效，配合单段检查用",src:"FANUC"},
+{code:"M02",name:"程序结束",args:"",note:"",src:"FANUC"},
+{code:"M03",name:"主轴正转",args:"S=转速",note:"",src:"FANUC"},
+{code:"M04",name:"主轴反转",args:"S=转速",note:"",src:"FANUC"},
+{code:"M05",name:"主轴停止+切削液关",args:"",note:"",src:"FANUC"},
+{code:"M08",name:"切削液开",args:"",note:"",src:"FANUC"},
+{code:"M09",name:"切削液关",args:"",note:"",src:"FANUC"},
+{code:"M10",name:"主轴夹头·关闭(夹紧)",args:"",note:"",src:"津上"},
+{code:"M11",name:"主轴夹头·打开(松开)",args:"",note:"",src:"津上"},
+{code:"M12",name:"主轴速度到达确认",args:"",note:"等主轴转到给定转速再继续",src:"津上"},
+{code:"M13",name:"主轴正转CW+切削液开",args:"S=转速",note:"津上常用，一举两得；与 M14 配 S 使用",src:"津上"},
+{code:"M14",name:"主轴反转CCW+切削液开",args:"S=转速",note:"",src:"津上"},
+{code:"M18",name:"工件传送装置启动",args:"",note:"",src:"津上/选配"},
+{code:"M20",name:"副轴夹头·关闭(夹紧)",args:"",note:"切断前副轴夹住工件",src:"津上"},
+{code:"M21",name:"副轴夹头·打开(松开)",args:"",note:"",src:"津上"},
+{code:"M23",name:"动力头(前驱)·正转",args:"S=转速",note:"侧面/正面动力头按刀口方向选 M23/M24",src:"津上/选配"},
+{code:"M24",name:"动力头(前驱)·反转",args:"S=转速",note:"",src:"津上/选配"},
+{code:"M25",name:"动力头(前驱)·停止",args:"",note:"",src:"津上/选配"},
+{code:"M29",name:"刚性攻丝模式开",args:"S=攻丝转速(平均400~800)",note:"正面攻丝：M29 S600 + G84",src:"津上/FANUC"},
+{code:"M30",name:"程序结束",args:"",note:"",src:"FANUC"},
+{code:"M42",name:"切断检出(差速式)",args:"",note:"切断后检测，防切断不完全工件飞出",src:"津上"},
+{code:"M50",name:"主轴C轴模式开",args:"",note:"侧面动力头加工第一步：C轴由程序控制角度",src:"津上"},
+{code:"M51",name:"主轴C轴模式关",args:"",note:"侧面动力头加工结束关闭",src:"津上"},
+{code:"M52",name:"副轴速度到达确认",args:"",note:"",src:"津上"},
+{code:"M53",name:"主轴&副轴速度到达确认",args:"",note:"切断前确认两轴都到给定转速",src:"津上"},
+{code:"M54",name:"主轴/副轴相位同步·开",args:"",note:"",src:"津上"},
+{code:"M55",name:"主轴/副轴相位同步·关",args:"",note:"",src:"津上"},
+{code:"M56",name:"主轴/副轴转速同步·开",args:"",note:"切断前主副轴同步旋转",src:"津上"},
+{code:"M57",name:"主轴/副轴转速同步·关",args:"",note:"",src:"津上"},
+{code:"M60",name:"送料机转矩关",args:"",note:"",src:"津上/选配"},
+{code:"M61",name:"送料机转矩开(往前送料)",args:"",note:"",src:"津上/选配"},
+{code:"M62",name:"送料机材料更换开始",args:"",note:"",src:"津上/选配"},
+{code:"M78",name:"工件前方排出·前进+确认",args:"",note:"副轴吐料",src:"津上/选配"},
+{code:"M79",name:"工件前方排出·后退",args:"",note:"",src:"津上/选配"},
+{code:"M82",name:"主轴制动·开",args:"",note:"侧面孔加工时锁住主轴不能转，加工完 M83 松开",src:"津上"},
+{code:"M83",name:"主轴制动·关",args:"",note:"",src:"津上"},
+{code:"M88",name:"高压切削液·开",args:"",note:"背轴内切削液(吐料/接料时用)",src:"津上/选配"},
+{code:"M89",name:"高压切削液·关",args:"",note:"",src:"津上/选配"},
+{code:"M92",name:"棒料更换子程序调用(O9002)",args:"",note:"棒料用完自动换料",src:"津上"},
+{code:"M94",name:"自动切料头(调O9004宏)",args:"",note:"放在程序最顶端：检查切断刀位置/切料头，防止挡料块撞机或材料飞出；宏内 #5023(Y机械坐标) #5021(X机械坐标) 判位置，不对则 #3000 报警或先切断",src:"津上"},
+{code:"M95",name:"送料机材料缺乏检查·开始",args:"",note:"与 M92/M96 配合",src:"津上/选配"},
+{code:"M96",name:"送料机材料缺乏检查·结束",args:"",note:"",src:"津上/选配"},
+{code:"M97",name:"工件计数器",args:"",note:"计数+1",src:"津上"},
+{code:"M98",name:"子程序调用",args:"P=程序号 L=次数",note:"",src:"FANUC"},
+{code:"M99",name:"子程序结束/返回",args:"",note:"",src:"FANUC"},
+{code:"M103",name:"副轴正转",args:"S=转速",note:"副轴转向注意：背轴与主轴转向关系按刀具安装方向",src:"津上"},
+{code:"M104",name:"副轴反转",args:"S=转速",note:"",src:"津上"},
+{code:"M105",name:"副轴停止",args:"",note:"",src:"津上"},
+{code:"M123",name:"背面动力头·正转",args:"S=转速",note:"",src:"津上/选配"},
+{code:"M124",name:"背面动力头·反转",args:"S=转速",note:"",src:"津上/选配"},
+{code:"M125",name:"背面动力头·停止",args:"",note:"",src:"津上/选配"},
+{code:"M129",name:"横向(侧面)刚性攻丝·开",args:"S=攻丝转速",note:"配 G284 使用",src:"津上/选配"},
+{code:"M150",name:"背轴C模式·开",args:"",note:"副轴侧端面动力头加工",src:"津上/选配"},
+{code:"M151",name:"背轴C模式·关",args:"",note:"",src:"津上/选配"},
+{code:"M160",name:"喷油1·开",args:"",note:"",src:"津上/选配"},
+{code:"M161",name:"喷油1·关",args:"",note:"",src:"津上/选配"},
+{code:"M162",name:"喷油2·开",args:"",note:"",src:"津上/选配"},
+{code:"M163",name:"喷油2·关",args:"",note:"",src:"津上/选配"},
+{code:"M164",name:"喷油3·开",args:"",note:"",src:"津上/选配"},
+{code:"M165",name:"喷油3·关",args:"",note:"",src:"津上/选配"},
+{code:"M166",name:"喷油4·开",args:"",note:"",src:"津上/选配"},
+{code:"M167",name:"喷油4·关",args:"",note:"",src:"津上/选配"},
+{code:"M170",name:"喷油5·开",args:"",note:"",src:"津上/选配"},
+{code:"M171",name:"喷油5·关",args:"",note:"",src:"津上/选配"},
+{code:"M182",name:"背轴刹车制动·开",args:"",note:"",src:"津上/选配"},
+{code:"M183",name:"背轴刹车制动·关",args:"",note:"",src:"津上/选配"},
+{code:"M223",name:"后驱动力头·正转",args:"S=转速",note:"侧面动力头；B0206 常用",src:"津上"},
+{code:"M224",name:"后驱动力头·反转",args:"S=转速",note:"",src:"津上"},
+{code:"M225",name:"后驱动力头·停止",args:"",note:"",src:"津上"},
+{code:"M500",name:"等待代码(主副轴同步)",args:"",note:"主副程序互等：M500~M599 都是等待码；/M500 带跳过符号",src:"津上"},
+{code:"M501",name:"等待代码·第2节点",args:"",note:"与 /M501 在主副程序间配对",src:"津上"},
+{code:"M502",name:"等待代码·第3节点",args:"",note:"",src:"津上"},
+{code:"M503",name:"等待代码·第4节点",args:"",note:"",src:"津上"},
+{code:"M505",name:"等待代码·结束节点",args:"",note:"",src:"津上"},
+{code:"M510",name:"等待代码·接料节点",args:"",note:"副轴接料流程 /M510 起步",src:"津上"},
+{code:"M520",name:"等待代码·拉料节点",args:"",note:"拉料流程",src:"津上"},
+{code:"M521",name:"等待代码·拉料第2节点",args:"",note:"",src:"津上"},
+{code:"M522",name:"等待代码·拉料第3节点",args:"",note:"",src:"津上"},
+{code:"M523",name:"等待代码·拉料第4节点",args:"",note:"",src:"津上"},
+{code:"M524",name:"等待代码·拉料第5节点",args:"",note:"",src:"津上"},
+{code:"M9",name:"呼叫副轴(背轴)程序",args:"/M9+程序号后4位",note:"例 /M91001=S205A 呼副轴程序 O1001；B0205-Ⅲ 写法 /M21001",src:"津上"},
+];
+
+// 地址字（不带代码时也认识）
+const ADDR = {
+  N:"程序段号", O:"程序号", X:"X轴坐标（直径值！）", U:"X向增量",
+  Z:"Z轴坐标", W:"Z向增量", Y:"Y轴坐标（半径值）", V:"Y向增量",
+  C:"C轴角度（度）", H:"固定循环中C轴定位角度 / G28H0.0回C轴原点",
+  I:"圆弧圆心X / 循环参数", J:"圆弧圆心Y / 循环参数", K:"圆弧圆心Z / 循环参数",
+  R:"圆弧半径 / 循环参数", P:"程序号 / 停顿 / 循环段号",
+  Q:"循环步进量 / 循环结束段号", D:"刀补号 / G176分层切深",
+  T:"刀具号+刀补（T0606=06号刀+06号补，T0700=取消刀补）",
+  S:"转速（S1=主轴 S2=副轴）", F:"进给速度 / 螺距",
+  A:"倒角角度", E:"G501/G176 方向参数", L:"循环次数",
+};
+
+// 工艺段模式识别：谁先匹配谁定段
+const SEG_PATTERNS = [
+  [/^\s*O\d+\s*$|^\s*O\d+\s*\(/, "程序头", "#7c3aed", "子程序或主程序开始"],
+  [/^\s*\/?\s*M9\d{4}/, "副轴程序调用", "#d97706", "主程序呼叫背轴(副轴)程序，两程序并行执行"],
+  [/G300/, "挡料定位", "#2563eb", "切断刀前伸挡料，定 Z1 加工长度（G300 X-1.0 Z… T…），随后 G150 留平端面余量"],
+  [/G150/, "平端面余量设定", "#2563eb", "设定 Z1 平端面预留余量（G150 Z-0.1）"],
+  [/G12\.1/, "极坐标铣形", "#0d9488", "端面动力头极坐标插补，X 直径值 C 半径值，区间内只能 G1，结束 G13.1"],
+  [/G51\.2/, "多边形铣削", "#0d9488", "主轴+动力头联动铣多边形，G50.2 取消"],
+  [/G8\.5\s*P2|G811/, "振动切削", "#0891b2", "振荡切削断屑，G8.5 P0 取消"],
+  [/G814/, "宏断屑车削", "#0891b2", "进Q退R的啄式断屑车削（津上宏）"],
+  [/G176/, "螺纹断屑循环", "#0891b2", "津上振荡断屑螺纹循环"],
+  [/M56|M57/, "切断(主副轴同步)", "#dc2626", "M56 同步→M20 副轴夹紧→M53 确认→G1X-1.0 切断→M42 检出→M57 关同步→M5"],
+  [/\/?\s*M510/, "副轴接料", "#d97706", "T9900 同心→前进夹持→M21 松→M78/M79 吐料"],
+  [/M520|M521|M522|M523|M524/, "拉料", "#d97706", "副轴拉棒料：M20 夹紧→主轴 M11 松→W 拉料长度→G50W 偏移"],
+  [/M50\s|M50$/, "C轴模式(侧面动力头)", "#2563eb", "M50 开 C 轴→G28H0.0 回原点→G0C… 定位→M82 制动锁主轴→加工→M83→M51 关"],
+  [/M29|G84/, "正面刚性攻丝", "#16a34a", "M29 S转速 + G84 Z深度 F螺距"],
+  [/M129|G284/, "侧面刚性攻丝", "#16a34a", "M129 S转速 + G284 X深度 Q F螺距（动力头攻丝）"],
+  [/G83/, "正面钻孔", "#16a34a", "G83 Z深度 Q每刀 P停顿 F进给，G80 取消"],
+  [/G87/, "侧面钻孔(动力头)", "#16a34a", "G87 X深度 Q P F，配 H=C轴角度、M82/M83 制动、G98"],
+  [/G71|G70/, "粗/精车循环", "#16a34a", "G71 粗车轮廓→G70 精车"],
+  [/G75/, "切槽", "#16a34a", "G75 外径/内径切槽循环"],
+  [/G74/, "端面槽/啄钻", "#16a34a", "G74 端面切槽循环"],
+  [/G92/, "螺纹(G92)", "#16a34a", "G92 逐刀车螺纹，底径≈大径−1.3×螺距"],
+  [/G76/, "螺纹(G76)", "#16a34a", "G76 复合螺纹循环"],
+  [/^T\d{4}/, "换刀", "#7c3aed", "呼叫刀具并带刀补"],
+  [/M30|M02/, "程序结束", "#6b7280", ""],
+];
+
+const FORMULAS = [
+  {t:"螺纹底径", f:"底径 ≈ 大径 − 1.3 × 螺距", d:"不保证100%精确，最终以螺纹通止规为准，用刀补微调"},
+  {t:"挡料长度", f:"挡料长度 = 工件长度 + 切断刀宽 + 0.5 余量", d:"G300 X-1.0 Z(挡料长度) T(切断刀号)"},
+  {t:"端面起刀 X", f:"X = 材料最大外径 + 2.0（安全距离）", d:"空心管材：X = 内孔直径 − 1.0"},
+  {t:"定心深度", f:"Z = 倒角大小 + 钻头半径", d:"例 φ4×90°定心钻定 C0.5 倒角：Z=0.5+2=2.5"},
+  {t:"钻孔深度", f:"Z = 所需深度 + 钻头半径 ÷ 1.73", d:"G83 循环里 Q=每刀进给量，P=孔底停顿(毫秒)"},
+  {t:"攻丝深度", f:"深度 = 螺纹深度 + 2 个丝锥无效牙", d:"攻丝转速平均 400~800；攻丝固定 G99 模式"},
+  {t:"每分进给换算", f:"F(mm/min) = F(mm/rev) × S(r/min)", d:"动力头加工用 G98 每分进给（攻丝除外）"},
+  {t:"侧面铣 Y 安全位", f:"Y = 加工半径 + 刀具半径 + 1.0", d:"例 φ6 铣刀铣 φ20 工件：Y=10+3+1=14"},
+  {t:"切断位置", f:"Z = 切断位置 + 切断刀宽 + 0.1 余量", d:"例 2.0 刀宽在 Z37 切断：G0 X14.0 Z39.1"},
+  {t:"转速换算", f:"n = V × 1000 ÷ (π × D)", d:"推荐 V：200~350 m/min（按刀具厂推荐）"},
+  {t:"振动切削频率", f:"f₀ = S × I ÷ 60 (Hz)", d:"G8.5：例 S4500 I0.5 → 37.5Hz；I 取 0.5/1.5/2.5…，K 频率系数"},
+  {t:"极坐标规则", f:"X 按直径值，Y(换成C) 按半径值，按刀具中心编程", d:"G12.1 内只能 G1；开/关前后需 G40；外轮廓顺时针、内轮廓逆时针"},
+  {t:"走心机方向注意", f:"副轴 Z2 与主轴 Z1 方向相反", d:"副轴 X 正负按刀尖朝向：刀尖朝负 X 编程用负值"},
+  {t:"六轴机轴选择", f:"主轴P1 / 横向动力头P2 / 后驱动力头P3 / 副轴P21 / 背面动力头P22", d:"用于等待M码等需要指定轴的场合"},
+  {t:"侧面孔加工套路", f:"M50 → G28H0.0 → G0C角度 → M82 → 加工 → M83 → M51", d:"M82 制动锁主轴、M83 松开；每换一个 C 角度重复 M82/M83"},
+];
+
+/* ============================================================
+   二、解析器
+   ============================================================ */
+const DICT = loadDict();
+const dictMap = {}; DICT.forEach(d => dictMap[d.code] = d);
+
+function loadDict(){
+  try{ const s = localStorage.getItem('zoujin_dict_v1');
+    if(s){ const a = JSON.parse(s); if(Array.isArray(a) && a.length) return a; }
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DICT_DEFAULT));
+}
+function saveDict(){ localStorage.setItem('zoujin_dict_v1', JSON.stringify(DICT)); }
+
+// 拆行 → token
+function tokenizeLine(line){
+  let s = line;
+  const out = {raw:line, skip:false, n:null, prog:null, tokens:[], comment:'', macro:''};
+  // 注释 ( ... ) 与 ; 之后内容
+  let m = s.match(/\((.*)\)/); if(m){ out.comment = m[1]; s = s.replace(m[0],' '); }
+  const sc = s.indexOf(';'); if(sc >= 0){ if(!out.comment) out.comment = s.slice(sc+1).trim(); s = s.slice(0, sc); }
+  if(/^\s*\/\s*/.test(s)){ out.skip = true; s = s.replace(/^\s*\/\s*/,''); }
+  s = s.replace(/\s+/g,' ').trim();
+  if(!s) return out;
+  // Oxxxx / Nxxxx 开头
+  m = s.match(/^O\s*(\d+)\s*(.*)$/i); if(m){ out.prog = m[1]; s = m[2].trim(); }
+  m = s.match(/^N\s*(\d+)\s*(.*)$/i); if(m){ out.n = m[1]; s = m[2].trim(); }
+  if(!s) return out;
+  // 宏语句整行
+  if(/^(IF|WHILE|GOTO|END\d*|DO\d*|THEN)\b/i.test(s) || /^#\d+\s*=/.test(s)){
+    out.macro = s; return out;
+  }
+  // token 正则：字母+数字（G76X22.0Z-1.0 连写也拆开）；S1=3000；#变量；[表达式]
+  const re = /([A-Z](?:\d+=[+-]?\d*\.?\d*|[+-]?\d*\.?\d+)?)|(#[A-Z]?\d+(?:\[[^\]]*\])?)|(\[[^\]]*\])/g;
+  let t;
+  while((t = re.exec(s)) !== null){
+    const raw = t[0];
+    if(raw.startsWith('#')){ out.tokens.push({type:'macro', raw}); continue; }
+    if(raw.startsWith('[')){ out.tokens.push({type:'expr', raw}); continue; }
+    const letter = raw[0].toUpperCase();
+    const val = raw.slice(1);
+    if(letter === 'G' || letter === 'M' || (val === '' && !'XYZUVWCIJKR'.includes(letter))) { out.tokens.push({type:'word', raw:raw.toUpperCase(), letter}); continue; }
+    out.tokens.push({type:'addr', letter, val, raw:raw.toUpperCase()});
+  }
+  return out;
+}
+
+// G0→G00、M5→M05 归一化；G12.1/G8.5 原样
+function normCode(code){
+  const m = String(code).match(/^([GM])(\d+)(\.\d+)?$/);
+  if(!m) return String(code);
+  return m[1] + (m[2].length < 2 ? '0'+m[2] : m[2]) + (m[3]||'');
+}
+
+function gName(line){
+  for(const t of line.tokens) if(t.type==='word' && /^G\d/.test(t.raw)) return normCode(t.raw);
+  return null;
+}
+function gNum(line){ for(const t of line.tokens) if(t.type==='word' && /^G\d/.test(t.raw)) return +t.raw.slice(1); return null; }
+
+// 单行解释
+function explainLine(line, prev){
+  const t = line.tokens;
+  const html = [];
+  const meanings = [];
+  const g = gName(line);
+  // 行级特殊解释
+  if(line.macro){
+    const m = line.macro;
+    let mean = '';
+    if(/^#3000\s*=\s*(\d+)/.test(m)) mean = '宏报警 #3000：停机并显示报警 '+RegExp.$1+(line.comment? '（'+line.comment+'）':'');
+    else if(/^#(\d+)\s*=\s*(.+)$/.test(m)) mean = '宏变量 #'+RegExp.$1+' 赋值：'+RegExp.$2;
+    else if(/^IF\s*\[(.+)\]\s*GOTO\s*(\d+)/i.test(m)) mean = '条件判断：若 '+RegExp.$1+' 成立则跳到 N'+RegExp.$2;
+    else if(/^WHILE\s*\[(.+)\]\s*DO/i.test(m)) mean = '循环开始：当 '+RegExp.$1+' 满足时循环执行';
+    else if(/^END\d*/i.test(m)) mean = '循环结束';
+    else if(/^GOTO\s*(\d+)/i.test(m)) mean = '无条件跳转到 N'+RegExp.$1;
+    else mean = '宏程序语句';
+    return {html:'<span class="chip macro">宏</span> <code class="raw">'+esc(m)+'</code> <span class="mn">— '+mean+'</span>', meaning:mean, g};
+  }
+  if(!t.length){
+    if(line.prog && line.n) return {html:'<span class="mn">程序号 O'+esc(line.prog)+' · 段号 N'+esc(line.n)+'</span>', meaning:'', g:null};
+    if(line.prog) return {html:'<span class="mn" style="color:#7c3aed;font-weight:600">程序号 O'+esc(line.prog)+'</span>', meaning:'程序号 O'+line.prog, g:null};
+    if(line.n) return {html:'<span class="mn">段号标记 N'+esc(line.n)+'（GOTO 跳转目标）</span>', meaning:'段号 N'+line.n, g:null};
+  }
+  // G 码解释（G76/G71 特例拆参）
+  if(g){
+    const d = dictMap[g];
+    const extra = specialG(line, g);
+    html.push('<span class="chip G" title="'+esc(d? d.args||'' : '')+'">'+esc(g)+'</span>');
+    meanings.push(esc(d? d.name : '未知G码') + (extra? '：'+extra : ''));
+  }
+  let hasM = false;
+  // 坐标分组
+  const coords = [];
+  let hasC = false, hasH = false, hasX = false;
+  for(const tok of t){
+    if(tok.type !== 'addr') continue;
+    const L = tok.letter;
+    if('XYZUVWC'.includes(L)){
+      coords.push(tok); if(L==='C') hasC = true; if(L==='X') hasX = true; if(L==='H') hasH = true;
+    }
+  }
+  if(hasH){ const h = t.find(x=>x.letter==='H'); if(h && coords.indexOf(h)<0) coords.push(h); }
+  // 逐个 token 输出
+  for(const tok of t){
+    if(tok.type==='macro'){ html.push('<span class="chip macro" title="宏变量">'+esc(tok.raw)+'</span>'); continue; }
+    if(tok.type==='expr'){ html.push('<span class="chip macro" title="表达式">'+esc(tok.raw)+'</span>'); continue; }
+    if(tok.type==='word'){
+      const w = normCode(tok.raw);
+      if(tok.letter==='G'){
+        if(w !== g){   // 主 G 码已单独渲染；本行其余 G 码也逐个解释
+          const d = dictMap[w];
+          html.push('<span class="chip G" title="'+esc(d? d.args||'' : '')+'">'+esc(w)+'</span>');
+          meanings.push(d? d.name : w+'（字典未收录）');
+        }
+        continue;
+      }
+      if(tok.letter==='M'){
+        let d = dictMap[w];
+        if(!d && /^M9\d{4}$/.test(tok.raw)) d = dictMap['M9'];
+        hasM = true;
+        html.push('<span class="chip M" title="'+esc(d? d.name+' — '+d.args : '')+'">'+esc(tok.raw)+'</span>');
+        meanings.push(d? d.name : tok.raw+'（字典未收录）');
+        continue;
+      }
+      html.push('<span class="chip macro" title="'+esc(tok.raw)+'">'+esc(tok.raw)+'</span>');
+      continue;
+    }
+    const L = tok.letter, v = tok.val;
+    if(L==='G') continue;
+    if(L==='M'){
+      let d = dictMap[normCode(tok.raw)];
+      if(!d && /^M9\d{4}$/.test(tok.raw)) d = dictMap['M9'];
+      hasM = true;
+      html.push('<span class="chip M" title="'+esc(d? d.name+' — '+d.args : '')+'">'+esc(tok.raw)+'</span>');
+      meanings.push(d? d.name : tok.raw+'（字典未收录）');
+    } else if(L==='T'){
+      let desc;
+      if(v==='0'||v==='00') desc = '取消刀补';
+      else if(g==='G300' && v.length===4 && v.endsWith('00')) desc = '挡料刀 '+v.slice(0,2)+' 号（仅挡料不换刀）';
+      else if(v.length===4) desc = '换 '+v.slice(0,2)+' 号刀，刀补 '+v.slice(2)+(v.endsWith('00')?'（取消刀补）':'');
+      else desc = '刀具 '+v;
+      html.push('<span class="chip T" title="刀具号+刀补">'+esc(tok.raw)+'</span>');
+      meanings.push(desc);
+    } else if(L==='S'){
+      const sp = tok.raw.match(/^S(\d+)=/);
+      const desc = sp ? (sp[1]==='1'?'主轴':'副轴')+'转速 '+v+' r/min' : '转速 '+v+' r/min';
+      html.push('<span class="chip F" title="转速">'+esc(tok.raw)+'</span>');
+      meanings.push(desc);
+    } else if(L==='F'){
+      const mode = prev && (prev.gMode||'G99');
+      const unit = mode==='G98' ? 'mm/min' : 'mm/rev';
+      const isPitch = prev && prev.isThread;
+      html.push('<span class="chip F" title="进给速度">'+esc(tok.raw)+'</span>');
+      meanings.push(isPitch ? '螺距 '+v : '进给 '+v+' '+unit);
+    } else if('XYZUVWC'.includes(L)){
+      const ctx = addrCtx(line, L);
+      html.push('<span class="chip addr" title="'+esc(ctx)+'">'+esc(tok.raw)+'</span>');
+    } else if('IJKR'.includes(L)){
+      html.push('<span class="chip addr" title="'+esc(ADDR[L]||'')+'">'+esc(tok.raw)+'</span>');
+    } else {
+      html.push('<span class="chip addr" title="'+esc(ADDR[L]||'')+'">'+esc(tok.raw)+'</span>');
+    }
+  }
+  // 循环续行（G90/G92/G75 等的 X-only 行）：沿用上一段循环
+  if(!g && !hasM && coords.length && prev && prev.lastG
+     && ['G90','G92','G75','G74','G76','G71','G70','G32'].includes(prev.lastG)){
+    const dd = dictMap[prev.lastG];
+    meanings.unshift('沿用上一段'+(dd? dd.name : prev.lastG)+'（续行）');
+  }
+  // 组合成一句（找本行的运动 G 码拼句子，如 G99 G0 X22.0 Z0.0 → 快速定位到…；每转进给）
+  const mgTok = t.find(x => x.type==='word' && x.letter==='G' && /^G0[0123]$/.test(normCode(x.raw)));
+  let summary;
+  if(coords.length && mgTok){
+    const mg = normCode(mgTok.raw);
+    const parts = coords.map(c=>{
+      if(c.letter==='C') return 'C轴 '+c.val+'°';
+      if(c.letter==='H') return 'C轴 '+c.val+'°';
+      return c.letter+' '+c.val+(c.letter==='X'?'（直径）':'');
+    });
+    const act = ({G00:'快速定位到',G01:'直线插补到',G02:'顺时针圆弧到',G03:'逆时针圆弧到'})[mg]||'移动到';
+    const mgName = dictMap[mg] ? dictMap[mg].name : '';
+    const rest = meanings.filter(m => m !== mgName).join('；');
+    summary = act+' ('+parts.join(', ')+')'+(rest? '；'+rest : '');
+  } else {
+    summary = meanings.join('；');
+  }
+  const gd = g? dictMap[g] : null;
+  return {html: html.join('') + ' <span class="mn">'+(summary? '— '+esc(summary):'')+'</span>', meaning:summary, g, gd};
+}
+
+// 地址字在特定 G 码环境下的含义
+function addrCtx(line, L){
+  const g = gNum(line);
+  if(L==='X'){
+    if(g===87||g===88||g===284||g===184) return 'X=钻孔/攻丝深度';
+    if(g===83||g===84) return 'X=横向位置(端面加工时)';
+    return 'X轴坐标（直径值）';
+  }
+  if(L==='Z' && (g===83||g===84)) return 'Z=钻孔/攻丝深度';
+  if(L==='C') return 'C轴角度（度）';
+  if(L==='H') return g===28 ? '回C轴原点(H0.0)' : '固定循环C轴定位角度';
+  if(L==='P' && g===4) return 'P=毫秒';
+  if(L==='P' && (g===83||g===84||g===87||g===88)) return 'P=孔底停顿(毫秒)';
+  if(L==='Q' && (g===83||g===87)) return 'Q=每刀进给量';
+  if(L==='X' && g===4) return 'X=暂停秒数';
+  if(L==='U' && g===4) return 'U=暂停秒数';
+  return ADDR[L]||'';
+}
+
+// G76/G71/G51.2 等特例的参数拆解
+function specialG(line, g){
+  const get = l=>{ const t=line.tokens.find(x=>x.type==='addr'&&x.letter===l); return t? t.val : null; };
+  if(g==='G76'){
+    const p = get('P');
+    if(p && p.length===6) return '精车'+p.slice(0,2)+'刀、退尾'+p.slice(2,4)+'、牙型角'+p.slice(4)+'°';
+    if(p) return 'm='+p.slice(0,2)+' r='+p.slice(2,4)+' a='+p.slice(4)+'°';
+  }
+  if(g==='G51.2') return 'P'+get('P')+'刀头、圈数比 Q'+get('Q');
+  if(g==='G8.5' && get('P')==='0') return '振动切削 关';
+  if(g==='G8.5' && get('P')==='2') return '振动切削 开';
+  if(g==='G71' && get('U')!==null && get('R')!==null && get('P')===null) return '第1段：切深 U'+get('U')+'、退刀 R'+get('R');
+  if(g==='G71' && get('P')!==null) return '第2段：轮廓 N'+get('P')+'~N'+get('Q')+'、余量 U'+get('U')+'/W'+get('W');
+  return null;
+}
+
+/* ============================================================
+   三、主流程
+   ============================================================ */
+let parsedLines = [];
+
+function parseProgram(text){
+  const lines = text.split(/\r?\n/);
+  parsedLines = [];
+  let prev = {gMode:'G99', isThread:false, thread:false};
+  lines.forEach((raw, i) => {
+    const line = tokenizeLine(raw);
+    if(!line.tokens.length && !line.macro && !line.prog && !line.n) return;
+    // 跟踪模态
+    for(const t of line.tokens){
+      if(t.type==='word' && t.raw==='G98') prev.gMode='G98';
+      if(t.type==='word' && t.raw==='G99') prev.gMode='G99';
+    }
+    const g = gNum(line);
+    if(g===92||g===76||g===32||g===176||g===84||g===88||g===184||g===284) prev.isThread = true; else if(g!==null) prev.isThread = false;
+    const gs = gName(line);
+    if(gs) prev.lastG = gs;
+    line.ex = explainLine(line, prev);
+    line.idx = i+1;
+    parsedLines.push(line);
+  });
+}
+
+function renderLines(){
+  const el = document.getElementById('outLines');
+  if(!parsedLines.length){ el.innerHTML = '<p class="mn" style="padding:20px 0;text-align:center">没解析出程序行，检查是否选对了内容</p>'; return; }
+  let h = '<table><thead><tr><th>行</th><th>程序</th><th>解读</th></tr></thead><tbody>';
+  parsedLines.forEach(line => {
+    h += '<tr><td class="lineno">'+line.idx+'</td><td><code class="raw">'+(line.skip?'<span title="块跳过(/)" style="color:#b45309">/</span>':'')+(line.n? '<span style="color:#9aa1ae">N'+esc(line.n)+'</span> ':'')+(line.prog? '<span style="color:#7c3aed;font-weight:600">O'+esc(line.prog)+'</span> ':'')+esc(line.raw.replace(/^(\/)?\s*[NO]\d+\s*/i,'').trim())+'</code>'+(line.comment?' <span class="mn" style="color:#9aa1ae">('+esc(line.comment)+')</span>':'')+'</td><td>'+line.ex.html+'</td></tr>';
+  });
+  el.innerHTML = h+'</tbody></table>';
+}
+
+function renderSeg(){
+  const el = document.getElementById('outSeg');
+  if(!parsedLines.length){ el.innerHTML='<p class="mn">没有内容</p>'; return; }
+  const segs = [];
+  let cur = null;
+  const push = ()=>{ if(cur) segs.push(cur); cur = null; };
+  parsedLines.forEach(line => {
+    let pat = null;
+    for(const p of SEG_PATTERNS){ if(p[0].test(line.raw)){ pat = p; break; } }
+    if(pat){
+      if(!cur || (pat[2] && cur.pat && pat[2]!==cur.pat[2])){ push(); cur = {pat, lines:[], start:line.idx}; }
+      else if(cur && pat===cur.pat){ /* same */ }
+      else { push(); cur = {pat, lines:[], start:line.idx}; }
+    }
+    if(!cur){ cur = {pat:["","程序主体","#6b7280",""], lines:[], start:line.idx}; }
+    cur.lines.push(line);
+  });
+  push();
+  let h = '';
+  segs.forEach(s => {
+    const body = s.lines.map(l=>l.raw).join('\n');
+    h += '<div class="seg"><div class="seg-head"><span class="seg-tag" style="color:'+s.pat[2]+'">'+s.pat[1]+'</span><span class="meta">行 '+s.start+' ~ '+ (s.start+s.lines.length-1) +' · '+s.lines.length+' 行</span></div><pre>'+esc(body)+'</pre>'+(s.pat[3]? '<div class="exp">💡 '+s.pat[3]+'</div>':'')+'</div>';
+  });
+  el.innerHTML = h || '<p class="mn">没有内容</p>';
+}
+
+function renderStat(){
+  const el = document.getElementById('outStat');
+  if(!parsedLines.length){ el.innerHTML='<p class="mn">没有内容</p>'; return; }
+  const cnt = {}; const tools = {};
+  parsedLines.forEach(line => {
+    for(const t of line.tokens){
+      if(t.type==='addr' && t.letter==='T') tools[t.raw] = (tools[t.raw]||0)+1;
+      if(t.type==='word' && /^[GM]/.test(t.raw)){
+        const d = dictMap[normCode(t.raw)];
+        if(!cnt[t.raw]) cnt[t.raw] = {n:0, d};
+        cnt[t.raw].n++;
+      }
+    }
+  });
+  let h = '';
+  if(Object.keys(tools).length){
+    h += '<div class="stats-cat">本程序用到的刀具</div>';
+    Object.keys(tools).forEach(t => { h += '<div class="toolrow"><span class="chip T">'+t+'</span><span class="mn">出现 '+tools[t]+' 次</span></div>'; });
+  }
+  const gs = Object.keys(cnt).filter(c=>c.startsWith('G')).sort();
+  const ms = Object.keys(cnt).filter(c=>c.startsWith('M')).sort();
+  const tbl = arr => {
+    let s = '<table><thead><tr><th>代码</th><th>次数</th><th>含义</th><th>来源</th></tr></thead><tbody>';
+    arr.forEach(c => { const e = cnt[c]; s += '<tr><td><span class="chip '+(c[0]==='G'?'G':'M')+'">'+c+'</span></td><td>'+e.n+'</td><td class="mn">'+(e.d? esc(e.d.name):'<b style="color:#dc2626">字典未收录，可在「代码字典」页添加</b>')+'</td><td><small class="src">'+(e.d? esc(e.d.src||'') : '')+'</small></td></tr>'; });
+    return s+'</tbody></table>';
+  };
+  if(gs.length){ h += '<div class="stats-cat">G 代码</div>'+tbl(gs); }
+  if(ms.length){ h += '<div class="stats-cat">M 代码</div>'+tbl(ms); }
+  el.innerHTML = h || '<p class="mn">没有内容</p>';
+}
+
+function renderFormula(){
+  const el = document.getElementById('outFormula');
+  let h = '';
+  FORMULAS.forEach(f => { h += '<div class="formula"><b>'+f.t+'：</b>'+f.f+'<div style="color:var(--ink2);font-size:12px;margin-top:2px">'+f.d+'</div></div>'; });
+  el.innerHTML = h;
+}
+
+/* ============================================================
+   四、字典编辑器
+   ============================================================ */
+function renderDict(){
+  const el = document.getElementById('outDict');
+  let h = '<table class="dict-edit"><thead><tr><th>代码</th><th>含义</th><th>参数说明</th><th>备注</th><th>来源</th><th></th></tr></thead><tbody>';
+  DICT.forEach((d, i) => {
+    h += '<tr>'
+      +'<td><input data-k="code" data-i="'+i+'" value="'+esc(d.code)+'"></td>'
+      +'<td><input data-k="name" data-i="'+i+'" value="'+esc(d.name)+'"></td>'
+      +'<td><input data-k="args" data-i="'+i+'" value="'+esc(d.args||'')+'"></td>'
+      +'<td><input data-k="note" data-i="'+i+'" value="'+esc(d.note||'')+'"></td>'
+      +'<td><input data-k="src" data-i="'+i+'" value="'+esc(d.src||'')+'" style="width:70px"></td>'
+      +'<td><button class="btn" data-del="'+i+'" style="padding:2px 8px;color:#dc2626">删</button></td>'
+      +'</tr>';
+  });
+  el.innerHTML = h+'</tbody></table>';
+  el.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const i = +inp.dataset.i, k = inp.dataset.k;
+      DICT[i][k] = inp.value;
+      refreshDictMap(); saveDict();
+    });
+  });
+  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', e => {
+    DICT.splice(+b.dataset.del, 1); refreshDictMap(); saveDict(); renderDict();
+  }));
+}
+function refreshDictMap(){ Object.keys(dictMap).forEach(k=>delete dictMap[k]); DICT.forEach(d=>dictMap[d.code]=d); }
+
+/* ============================================================
+   五、OCR（Tesseract.js，懒加载）
+   ============================================================ */
+let tesseractReady = false, ocrFile = null;
+function loadTesseract(){
+  return new Promise((res, rej) => {
+    if(window.Tesseract){ tesseractReady = true; return res(); }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+    s.onload = ()=>{ tesseractReady = true; res(); };
+    s.onerror = ()=>rej(new Error('Tesseract 加载失败（需要联网）'));
+    document.head.appendChild(s);
+  });
+}
+async function doOcr(){
+  if(!ocrFile) return;
+  const st = document.getElementById('ocrStatus');
+  st.textContent = '准备识别引擎…（需要联网，首次较慢）';
+  try{
+    await loadTesseract();
+    st.textContent = '下载识别模型并识别中…（首次可能需 1~2 分钟）';
+    const worker = await Tesseract.createWorker('chi_sim+eng', 1, {langPath:'https://tessdata.projectnaptha.com/4.0.0'});
+    const { data } = await worker.recognize(ocrFile);
+    await worker.terminate();
+    document.getElementById('ocrText').value = data.text || '';
+    st.textContent = '识别完成。⚠️ 屏幕照片 0/O、S/5 易混，请核对修改后再使用。';
+  }catch(e){
+    st.textContent = '识别失败：'+e.message;
+  }
+}
+
+/* ============================================================
+   六、示例程序（津上培训教材 S205A 案例整理）
+   ============================================================ */
+const SAMPLE = `O1001(主轴程序)
+/M91001(呼叫副轴程序)
+M61(送料机往前送料)
+G0 T0 G99 G18(取消刀补·每转进给·Z1X1平面)
+M05(主轴停)
+M11(主轴夹头松开)
+G4 U0.2(等待0.2秒)
+G300 X-1.0 Z39.5 T0700(切断刀挡料，挡料长度=工件长度+刀宽+0.5)
+G150 Z-0.1(预留0.1平端面余量)
+M10(主轴夹头夹紧)
+G4 U0.2
+M01(选择停止)
+G0 Z-1.0(退到安全位置)
+G0 X120.0
+/M500(等待副轴)
+T0606 M13 S2200(外径刀，主轴正转+切削液)
+G99 G0 X22.0 Z0.0(定位到端面)
+G01 X-1.0 F0.06(平端面切过中心)
+G0 Z-2.0
+X120.0
+M01
+T1111 M13 S1800(定心钻φ4×90°)
+G99 G0 Z-2.0
+X0.0(定位材料中心)
+G01 Z2.3 F0.05(定心深度=倒角+钻头半径)
+G0 Z-2.0
+M01
+T1212 M13 S2000(钻头φ3.3)
+G99 G0 Z-2.0
+X0.0
+G83 Z8.0 Q2000 P200 F0.05(循环钻孔·每刀2mm·停顿0.2s)
+G80(取消钻孔循环)
+G0 Z-2.0
+M01
+T1313 M13 S0(丝锥M4×0.7)
+G99 G0 Z-2.0
+X0.0
+M29 S600(刚性攻丝模式)
+G84 Z6.5 P200 F0.7(攻丝循环·螺距0.7)
+G80
+G0 Z-2.0
+M01
+T0606 M13 S2200(外径车削)
+G99 G0 X22.0 Z-2.0
+G90 X16.0 Z39.0 F0.1(外径循环第一刀)
+X12.0 Z13.9
+X8.1
+X6.1 Z5.0
+G01 X4.0 Z0.0 F0.06(准备精车+倒角)
+G01 X6.0 Z1.0 F0.03(倒C1角)
+G01 Z5.0 F0.05
+G01 X8.0 Z6.0 F0.03(倒C1角)
+G01 Z14.0 F0.05
+G01 X10.0
+G01 X12.0 Z15.0(倒C1角)
+G0 X120.0
+M01
+T0505 M13 S2000(外径槽刀宽1.5)
+G99 G0 X10.0 Z13.6(下刀位=槽起点+刀宽+0.1)
+G75 R0.5(切槽循环退刀量)
+G75 X6.1 Z13.9 P1500 Q1200 F0.05(槽底+0.1余量)
+G01 Z13.3 F0.1
+G01 X8.0 F0.025(慢速贴近)
+G01 Z13.5 X7.6 F0.03(倒0.2角)
+G01 X6.0(清槽底)
+G01 Z14.0 F0.04
+G01 X14.0 F0.1
+G0 X120.0
+M01
+T0404 M13 S600(外径牙刀)
+G99 G0 X9.0 Z4.0
+G92 X7.7 Z13.0 F1.25(螺纹循环M8×1.25)
+X7.4
+X7.1
+X6.8
+X6.5
+X6.375(最后一刀走两遍去毛刺)
+X6.375
+G0 X120.0
+M01
+T0707 M13 S0(切断刀宽2.0)
+/M510(等待副轴接料)
+G99 G0 X14.0 Z39.1(切断位+刀宽+0.1)
+/M501
+/M502
+/M56(主副轴转速同步)
+/M20(副轴夹紧)
+M13 S1500
+/M53(主副轴速度确认)
+G99 G01 X-1.0 F0.05(切断)
+/M42(切断检出)
+/M57(关同步)
+M5(主轴停)
+/M503
+M95(送料机缺料检查开始)
+/M92(缺料则换棒料O9002)
+M96(检查结束)
+/M505
+M30(程序结束)
+`;
+
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ============================================================
+   七、事件绑定
+   ============================================================ */
+document.getElementById('btnParse').addEventListener('click', ()=>{
+  parseProgram(document.getElementById('src').value);
+  renderLines(); renderSeg(); renderStat();
+  switchTab('lines');
+});
+document.getElementById('btnSample').addEventListener('click', ()=>{
+  document.getElementById('src').value = SAMPLE;
+  parseProgram(SAMPLE); renderLines(); renderSeg(); renderStat();
+  switchTab('lines');
+});
+document.getElementById('btnClear').addEventListener('click', ()=>{
+  document.getElementById('src').value=''; parsedLines=[];
+  document.getElementById('outLines').innerHTML='<p class="mn" style="padding:20px 0;text-align:center">← 先在左侧粘贴或拖入程序，点「解读」</p>';
+  document.getElementById('outSeg').innerHTML=''; document.getElementById('outStat').innerHTML='';
+});
+
+// tabs
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', ()=>switchTab(b.dataset.tab)));
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  ['lines','seg','stat','dict','formula'].forEach(p=>{
+    document.getElementById('pane-'+p).style.display = p===name ? '' : 'none';
+  });
+  if(name==='dict') renderDict();
+  if(name==='formula') renderFormula();
+}
+
+// 文件拖放
+const drop = document.getElementById('drop');
+drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', ()=>{ drop.classList.remove('over'); });
+drop.addEventListener('drop', e=>{
+  e.preventDefault(); drop.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if(!f) return;
+  if(f.type.startsWith('image/')){ showPhoto(f); }
+  else { const r = new FileReader(); r.onload = ()=>document.getElementById('src').value = r.result; r.readAsText(f); }
+});
+document.getElementById('btnFile').addEventListener('click', ()=>document.getElementById('fileIn').click());
+document.getElementById('fileIn').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader(); r.onload = ()=>document.getElementById('src').value = r.result; r.readAsText(f);
+});
+document.getElementById('btnPhoto').addEventListener('click', ()=>document.getElementById('photoIn').click());
+document.getElementById('photoIn').addEventListener('change', e=>{ if(e.target.files[0]) showPhoto(e.target.files[0]); });
+function showPhoto(f){
+  ocrFile = f;
+  document.getElementById('ocrbox').style.display = '';
+  document.getElementById('ocrNote').style.display = '';
+  document.getElementById('ocrText').value = '';
+  document.getElementById('ocrStatus').textContent = '照片已载入，点「开始识别」';
+  const img = document.getElementById('ocrImg');
+  img.src = URL.createObjectURL(f);
+}
+document.getElementById('btnOcr').addEventListener('click', doOcr);
+document.getElementById('btnOcrUse').addEventListener('click', ()=>{
+  document.getElementById('src').value = document.getElementById('ocrText').value;
+});
+
+// 字典编辑按钮
+document.getElementById('btnDictAdd').addEventListener('click', ()=>{
+  DICT.push({code:'G000', name:'新代码含义', args:'', note:'', src:'自定义'});
+  saveDict(); renderDict();
+});
+document.getElementById('btnDictExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(DICT, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '走心机代码字典.json';
+  a.click();
+});
+document.getElementById('btnDictImport').addEventListener('click', ()=>document.getElementById('dictIn').click());
+document.getElementById('dictIn').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const a = JSON.parse(r.result);
+      if(!Array.isArray(a)) throw 0;
+      DICT.length = 0; a.forEach(x=>DICT.push(x));
+      refreshDictMap(); saveDict(); renderDict();
+    }catch(err){ alert('JSON 格式不对'); }
+  };
+  r.readAsText(f);
+});
+document.getElementById('btnDictReset').addEventListener('click', ()=>{
+  DICT.length = 0; DICT_DEFAULT.forEach(x=>DICT.push(JSON.parse(JSON.stringify(x))));
+  refreshDictMap(); saveDict(); renderDict();
+});
+
+renderFormula();
+</script>
+</body>
+</html>
