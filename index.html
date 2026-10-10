@@ -48,6 +48,16 @@ code.raw{font-family:Consolas,"Courier New",monospace;font-size:12.5px;color:#11
 .chip.macro{background:#ccfbf1;color:#0f766e}
 .chip.addr{background:#eef0f4;color:#4b5563}
 .chip.num{background:#fdf2f8;color:#9d174d}
+.chip.editable{cursor:pointer}
+.chip.editable:hover{box-shadow:0 0 0 2px #93c5fd}
+/* 点解读结果里的代码块 → 就地修改本机说明 */
+#chipEdit{position:absolute;z-index:60;width:360px;max-width:92vw;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(16,24,40,.2);padding:12px;display:none;text-align:left}
+#chipEdit h3{margin:0 0 8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+#chipEdit .ref{font-size:12px;color:var(--ink2);background:#f8fafc;border:1px solid var(--line);border-radius:6px;padding:6px 8px;margin-bottom:6px;max-height:76px;overflow:auto;line-height:1.5}
+#chipEdit label{display:block;font-size:12px;color:var(--ink2);margin:8px 0 3px}
+#chipEdit input,#chipEdit textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:12.5px}
+#chipEdit textarea{height:52px;resize:vertical}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#111827;color:#fff;font-size:13px;padding:9px 16px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.28);display:none;z-index:80;max-width:90vw;text-align:center}
 .mn{color:var(--ink2);font-size:12.5px}
 .mn b{color:var(--ink)}
 .seg{border:1px solid var(--line);border-radius:8px;margin-bottom:10px;overflow:hidden}
@@ -115,7 +125,11 @@ small.src{color:var(--ink3);font-size:11px}
       <h2>关于本工具</h2>
       <div style="font-size:12.5px;color:var(--ink2)">
         代码含义基于津上培训教材（S205A 客户培训 2024、G 代码使用方法 2023-08-11、G176/G814/G8.5 功能说明等）与 FANUC 标准整理。
-        津上专用 M 码可能因机型配置不同而不同（B0205-Ⅲ 与 S205A 个别码不同），如与你机器不符，请在「代码字典」页修改——修改会保存在本机浏览器里。
+        津上专用 M 码可能因机型配置不同而不同（B0205-Ⅲ 与 S205A 个别码不同）。
+        「代码字典」页分两层：<b>① 本机校准</b>只放你这台机器（B0206V）的补充说明，随便加随便改，存在本机浏览器里；
+        <b>② 内置资料</b>是上面这批资料整理出来的通用含义，只读、永远不会被改写。
+        ①里的说明是<b>追加</b>在原解释后面的，不顶替资料原意——比如 <b>正常 Txxxx = 刀号 + 刀补</b> 这条照旧，
+        本机 B0206V 的 <b>T2100</b> 会在后面多一句「本机补充：副轴移动对齐主轴」。
         带 <span class="badge">津上</span> 标记的是津上专用码；<span class="badge">选配</span> 表示需选配硬件/功能开通。
       </div>
     </div>
@@ -132,7 +146,7 @@ small.src{color:var(--ink3);font-size:11px}
     </div>
 
     <div class="card" id="pane-lines">
-      <h2>逐行解读 <span class="tip">鼠标悬停彩色代码块看参数说明 · 点击行号可跳到原程序行</span></h2>
+      <h2>逐行解读 <span class="tip">鼠标悬停彩色代码块看参数说明 · <b>点代码块可当场改本机含义</b>（改的是①本机校准，内置资料不动）</span></h2>
       <div id="outLines"><p class="mn" style="padding:20px 0;text-align:center">← 先在左侧粘贴或拖入程序，点「解读」</p></div>
     </div>
 
@@ -147,12 +161,14 @@ small.src{color:var(--ink3);font-size:11px}
     </div>
 
     <div class="card" id="pane-dict" style="display:none">
-      <h2>代码字典 <span class="tip">含义错了？直接改表格。改动自动保存在本机浏览器</span></h2>
-      <div class="btnrow" style="margin-bottom:10px">
-        <button class="btn" id="btnDictAdd">新增一行</button>
-        <button class="btn" id="btnDictExport">导出字典 JSON</button>
-        <button class="btn" id="btnDictImport">导入字典 JSON</button>
-        <button class="btn" id="btnDictReset">恢复内置默认</button>
+      <h2>代码字典 <span class="tip">① 本机校准＝你的机器专用（可改，追加在原解释后面）；② 内置资料＝厂家资料（只读，永不修改）</span></h2>
+      <div class="btnrow" style="margin-bottom:8px">
+        <input id="dictFilter" placeholder="🔍 筛选代码或含义，如 T2100 / 攻丝" style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit">
+        <button class="btn" id="btnDictAdd">＋ 新增本机条目</button>
+        <button class="btn" id="btnDictExport">导出本机校准</button>
+        <button class="btn" id="btnDictImport">导入本机校准</button>
+        <button class="btn" id="btnDictReset">恢复初始本机校准</button>
+        <span id="dictSaved" style="font-size:12px;color:var(--ok);font-weight:600"></span>
         <input type="file" id="dictIn" accept=".json" style="display:none">
       </div>
       <div id="outDict"></div>
@@ -162,6 +178,23 @@ small.src{color:var(--ink3);font-size:11px}
       <h2>公式速查 <span class="tip">培训教材里常用的经验公式</span></h2>
       <div id="outFormula"></div>
     </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- 点解读结果里的代码块 → 就地修改本机说明 -->
+<div id="chipEdit">
+  <h3><span id="chipEditTitle">修改说明</span><button class="btn" id="chipEditClose" style="padding:2px 8px">✕</button></h3>
+  <div class="ref" id="chipEditRef"></div>
+  <label>本机含义（追加在原解释后面，不顶替资料）</label>
+  <input id="chipEditName" placeholder="例：副轴移动对齐主轴">
+  <label>备注（鼠标悬停在代码块上时显示）</label>
+  <textarea id="chipEditNote" placeholder="例：接料/拉料前副轴先对到与主轴同心"></textarea>
+  <div class="btnrow" style="margin-top:10px">
+    <button class="btn primary" id="chipEditSave">保存</button>
+    <button class="btn" id="chipEditDel">删掉这条本机补充</button>
+    <span id="chipEditMsg" style="font-size:12px;color:var(--warn)"></span>
   </div>
 </div>
 
@@ -308,6 +341,26 @@ const DICT_DEFAULT = [
 {code:"M9",name:"呼叫副轴(背轴)程序",args:"/M9+程序号后4位",note:"例 /M91001=S205A 呼副轴程序 O1001；B0205-Ⅲ 写法 /M21001",src:"津上"},
 ];
 
+/* ---------------- T 码：资料附注（少数 T 码在别的机型上不是换刀） ----------------
+   正常 Txxxx = 刀号 + 刀补（T0606=06号刀+06号补）——这条基础解释永远不变。
+   这里放的是培训资料里的机型说明，只在原意后面**追加一条附注**，不顶替原意。
+   你自己机器上的（如 B0206V 的 T2100）放下面 MACHINE_DEFAULT / 本机校准层。   */
+const TDICT_DEFAULT = [
+{code:"T9900",name:"副轴移动对齐主轴·主副轴同心",args:"",note:"S205A 机型写法：接料/拉料前把副轴对到与主轴同心位置。培训 ppt slide52 出现在 G310 行（标「Z2轴加工原点复位」）、slide55 出现在接料段（标「主副轴同心」），每处都注明「B0205-Ⅲ: T2100」。",src:"S205A"},
+];
+
+/* ============================================================
+   两层结构（重要）：
+     第 1 层「本机校准」 MACHINE —— 只放你这台机器的补充/更正，压在内置资料之上，
+                                   随时可增删改，存在本机浏览器里。
+     第 2 层「内置资料」 DICT_DEFAULT(G/M) + TDICT_DEFAULT(T)
+                                 —— 厂家培训资料整理的通用含义，只读参考，程序永远不改写它。
+   解析顺序：先查本机校准 → 查不到再查内置资料。
+   ============================================================ */
+const MACHINE_DEFAULT = [
+{code:"T2100",name:"副轴移动对齐主轴·主副轴同心",args:"",note:"本机（B0206V）实机确认：接料/拉料前副轴移动对齐主轴。也出现在副轴程序头 G310 行（指定副轴 Z2）。资料里 S205A 同位置写 T9900。",src:"B0206V"},
+];
+
 // 地址字（不带代码时也认识）
 const ADDR = {
   N:"程序段号", O:"程序号", X:"X轴坐标（直径值！）", U:"X向增量",
@@ -370,16 +423,88 @@ const FORMULAS = [
 /* ============================================================
    二、解析器
    ============================================================ */
-const DICT = loadDict();
+// 资料层（只读，永不改写）：G/M 与 T
+const DICT  = JSON.parse(JSON.stringify(DICT_DEFAULT));
+const TDICT = JSON.parse(JSON.stringify(TDICT_DEFAULT));
 const dictMap = {}; DICT.forEach(d => dictMap[d.code] = d);
+const tdictMap = {}; TDICT.forEach(d => tdictMap[d.code] = d);
+// 本机校准层（可改，优先）
+const MACHINE = loadMachine();
+const machineMap = {}; MACHINE.forEach(d => machineMap[d.code] = d);
 
-function loadDict(){
-  try{ const s = localStorage.getItem('zoujin_dict_v1');
-    if(s){ const a = JSON.parse(s); if(Array.isArray(a) && a.length) return a; }
+function loadMachine(){
+  try{
+    const s = localStorage.getItem('zoujin_machine_v1');
+    if(s){ const a = JSON.parse(s); if(Array.isArray(a)) return a; }
+    const moved = migrateOldDict();          // 旧版整份字典 → 搬进本机校准层
+    if(moved) return moved;
   }catch(e){}
-  return JSON.parse(JSON.stringify(DICT_DEFAULT));
+  return JSON.parse(JSON.stringify(MACHINE_DEFAULT));
 }
-function saveDict(){ localStorage.setItem('zoujin_dict_v1', JSON.stringify(DICT)); }
+function saveMachine(){ localStorage.setItem('zoujin_machine_v1', JSON.stringify(MACHINE)); }
+function refreshMachineMap(){ Object.keys(machineMap).forEach(k=>delete machineMap[k]); MACHINE.forEach(d=>machineMap[d.code]=d); }
+
+// 老版本把「整份字典」和「T 表」各存一个 key，这里把与内置资料不同的条目搬进本机校准层
+function migrateOldDict(){
+  const moved = {};
+  try{
+    const oldGM = localStorage.getItem('zoujin_dict_v1');
+    if(oldGM){
+      const base = {}; DICT_DEFAULT.forEach(d=>base[d.code]=d);
+      const a = JSON.parse(oldGM);
+      if(Array.isArray(a)) a.forEach(d=>{
+        const o = base[d.code];
+        if(!o || o.name!==d.name || (o.args||'')!==(d.args||'') || (o.note||'')!==(d.note||''))
+          moved[d.code] = {code:d.code, name:d.name, args:d.args||'', note:d.note||'', src:d.src||'本机校准'};
+      });
+      localStorage.removeItem('zoujin_dict_v1');
+    }
+    const oldT = localStorage.getItem('zoujin_tdict_v1');
+    if(oldT){
+      const a = JSON.parse(oldT);
+      if(Array.isArray(a)) a.forEach(d=>{ moved[d.code] = {code:d.code, name:d.name, args:d.args||'', note:d.note||'', src:d.src||'本机校准'}; });
+      localStorage.removeItem('zoujin_tdict_v1');
+    }
+  }catch(e){ return null; }
+  const arr = Object.keys(moved).map(k=>moved[k]);
+  if(arr.length){ localStorage.setItem('zoujin_machine_v1', JSON.stringify(arr)); return arr; }
+  return null;
+}
+
+/* 解析时用：基础解释（资料/通用规则）永远保留，本机条目是**追加**一条说明，不顶替。
+   例：T2100 → 换 21 号刀，刀补 00（取消刀补）；本机补充：副轴移动对齐主轴·主副轴同心      */
+// 代码写法统一：G0→G00、M5→M05（用户手输的也按这个存，免得对不上）
+function normKey(v){
+  const s = String(v==null? '' : v).trim().toUpperCase();
+  return /^[GM]\d/.test(s) ? normCode(s) : s;
+}
+// 查本机条目：M8 / M08 两种写法都能命中
+function machOf(code){
+  const k = String(code==null? '' : code).toUpperCase();
+  if(!k) return null;
+  return machineMap[k] || machineMap[normCode(k)] || null;
+}
+function gmText(code){
+  const b = dictMap[code], m = machOf(code);
+  if(b && m) return b.name + '；本机补充：' + m.name;
+  if(b) return b.name;
+  if(m) return m.name + '（本机校准）';
+  return null;
+}
+function gTip(code){   // G 码色块的悬停说明
+  const b = dictMap[code], m = machOf(code), p = [];
+  if(b && b.args) p.push(b.args);
+  else if(!b && m) p.push(m.name + '（本机校准）');
+  if(m && (m.args || m.note)) p.push('本机补充：' + (m.args || m.note));
+  return p.join(' ｜ ');
+}
+function mTip(code){   // M 码色块的悬停说明
+  const b = dictMap[code], m = machOf(code), p = [];
+  if(b) p.push(b.args ? b.name + ' — ' + b.args : b.name);
+  else if(m) p.push(m.name + '（本机校准）');
+  if(m && (m.args || m.note)) p.push('本机补充：' + (m.args || m.note));
+  return p.join(' ｜ ');
+}
 
 // 拆行 → token
 function tokenizeLine(line){
@@ -453,10 +578,10 @@ function explainLine(line, prev){
   }
   // G 码解释（G76/G71 特例拆参）
   if(g){
-    const d = dictMap[g];
+    const txt = gmText(g);
     const extra = specialG(line, g);
-    html.push('<span class="chip G" title="'+esc(d? d.args||'' : '')+'">'+esc(g)+'</span>');
-    meanings.push(esc(d? d.name : '未知G码') + (extra? '：'+extra : ''));
+    html.push('<span class="chip G editable" data-code="'+esc(g)+'" title="'+esc(gTip(g))+'">'+esc(g)+'</span>');
+    meanings.push(esc(txt || '未知G码') + (extra? '：'+extra : ''));
   }
   let hasM = false;
   // 坐标分组
@@ -478,18 +603,18 @@ function explainLine(line, prev){
       const w = normCode(tok.raw);
       if(tok.letter==='G'){
         if(w !== g){   // 主 G 码已单独渲染；本行其余 G 码也逐个解释
-          const d = dictMap[w];
-          html.push('<span class="chip G" title="'+esc(d? d.args||'' : '')+'">'+esc(w)+'</span>');
-          meanings.push(d? d.name : w+'（字典未收录）');
+          const txt = gmText(w);
+          html.push('<span class="chip G editable" data-code="'+esc(w)+'" title="'+esc(gTip(w))+'">'+esc(w)+'</span>');
+          meanings.push(txt || w+'（字典未收录）');
         }
         continue;
       }
       if(tok.letter==='M'){
-        let d = dictMap[w];
-        if(!d && /^M9\d{4}$/.test(tok.raw)) d = dictMap['M9'];
+        let txt = gmText(w), tip = mTip(w);
+        if(!txt && /^M9\d{4}$/.test(tok.raw)){ txt = gmText('M9'); tip = mTip('M9'); }
         hasM = true;
-        html.push('<span class="chip M" title="'+esc(d? d.name+' — '+d.args : '')+'">'+esc(tok.raw)+'</span>');
-        meanings.push(d? d.name : tok.raw+'（字典未收录）');
+        html.push('<span class="chip M editable" data-code="'+esc(normCode(tok.raw))+'" title="'+esc(tip)+'">'+esc(tok.raw)+'</span>');
+        meanings.push(txt || tok.raw+'（字典未收录）');
         continue;
       }
       html.push('<span class="chip macro" title="'+esc(tok.raw)+'">'+esc(tok.raw)+'</span>');
@@ -498,18 +623,23 @@ function explainLine(line, prev){
     const L = tok.letter, v = tok.val;
     if(L==='G') continue;
     if(L==='M'){
-      let d = dictMap[normCode(tok.raw)];
-      if(!d && /^M9\d{4}$/.test(tok.raw)) d = dictMap['M9'];
+      let txt = gmText(normCode(tok.raw)), tip = mTip(normCode(tok.raw));
+      if(!txt && /^M9\d{4}$/.test(tok.raw)){ txt = gmText('M9'); tip = mTip('M9'); }
       hasM = true;
-      html.push('<span class="chip M" title="'+esc(d? d.name+' — '+d.args : '')+'">'+esc(tok.raw)+'</span>');
-      meanings.push(d? d.name : tok.raw+'（字典未收录）');
+      html.push('<span class="chip M editable" data-code="'+esc(normCode(tok.raw))+'" title="'+esc(tip)+'">'+esc(tok.raw)+'</span>');
+      meanings.push(txt || tok.raw+'（字典未收录）');
     } else if(L==='T'){
+      // 基础解释（刀号+刀补规则）永远保留；本机校准 / 资料说明只往后追加
+      const k = tok.raw.toUpperCase();
+      const mach = machOf(k), tnote = tdictMap[k];
       let desc;
       if(v==='0'||v==='00') desc = '取消刀补';
       else if(g==='G300' && v.length===4 && v.endsWith('00')) desc = '挡料刀 '+v.slice(0,2)+' 号（仅挡料不换刀）';
       else if(v.length===4) desc = '换 '+v.slice(0,2)+' 号刀，刀补 '+v.slice(2)+(v.endsWith('00')?'（取消刀补）':'');
       else desc = '刀具 '+v;
-      html.push('<span class="chip T" title="刀具号+刀补">'+esc(tok.raw)+'</span>');
+      if(tnote) desc += '；资料注：' + tnote.name + (tnote.src? '（'+tnote.src+'）' : '');
+      if(mach) desc += '；本机补充：' + mach.name + (g==='G310' ? '（写在 G310 里＝指定副轴 Z2）' : '');
+      html.push('<span class="chip T editable" data-code="'+esc(k)+'" title="'+esc(mach? (mach.note||mach.args||mach.name) : (tnote? (tnote.note||tnote.name) : '刀具号+刀补'))+'">'+esc(tok.raw)+'</span>');
       meanings.push(desc);
     } else if(L==='S'){
       const sp = tok.raw.match(/^S(\d+)=/);
@@ -548,13 +678,13 @@ function explainLine(line, prev){
       return c.letter+' '+c.val+(c.letter==='X'?'（直径）':'');
     });
     const act = ({G00:'快速定位到',G01:'直线插补到',G02:'顺时针圆弧到',G03:'逆时针圆弧到'})[mg]||'移动到';
-    const mgName = dictMap[mg] ? dictMap[mg].name : '';
+    const mgName = gmText(mg) || '';
     const rest = meanings.filter(m => m !== mgName).join('；');
     summary = act+' ('+parts.join(', ')+')'+(rest? '；'+rest : '');
   } else {
     summary = meanings.join('；');
   }
-  const gd = g? dictMap[g] : null;
+  const gd = g? (machOf(g) || dictMap[g]) : null;
   return {html: html.join('') + ' <span class="mn">'+(summary? '— '+esc(summary):'')+'</span>', meaning:summary, g, gd};
 }
 
@@ -664,8 +794,9 @@ function renderStat(){
     for(const t of line.tokens){
       if(t.type==='addr' && t.letter==='T') tools[t.raw] = (tools[t.raw]||0)+1;
       if(t.type==='word' && /^[GM]/.test(t.raw)){
-        const d = dictMap[normCode(t.raw)];
-        if(!cnt[t.raw]) cnt[t.raw] = {n:0, d};
+        const code = normCode(t.raw);
+        const d = machOf(code) || dictMap[code];
+        if(!cnt[t.raw]) cnt[t.raw] = {n:0, d, txt: gmText(code)};
         cnt[t.raw].n++;
       }
     }
@@ -673,13 +804,17 @@ function renderStat(){
   let h = '';
   if(Object.keys(tools).length){
     h += '<div class="stats-cat">本程序用到的刀具</div>';
-    Object.keys(tools).forEach(t => { h += '<div class="toolrow"><span class="chip T">'+t+'</span><span class="mn">出现 '+tools[t]+' 次</span></div>'; });
+    Object.keys(tools).forEach(t => {
+      const m = machOf(t);
+      h += '<div class="toolrow"><span class="chip T editable" data-code="'+esc(t)+'">'+t+'</span><span class="mn">出现 '+tools[t]+' 次</span>'
+         + (m? '<span class="mn" style="color:var(--warn)">本机另有含义：'+esc(m.name)+'</span>' : '')+'</div>';
+    });
   }
   const gs = Object.keys(cnt).filter(c=>c.startsWith('G')).sort();
   const ms = Object.keys(cnt).filter(c=>c.startsWith('M')).sort();
   const tbl = arr => {
     let s = '<table><thead><tr><th>代码</th><th>次数</th><th>含义</th><th>来源</th></tr></thead><tbody>';
-    arr.forEach(c => { const e = cnt[c]; s += '<tr><td><span class="chip '+(c[0]==='G'?'G':'M')+'">'+c+'</span></td><td>'+e.n+'</td><td class="mn">'+(e.d? esc(e.d.name):'<b style="color:#dc2626">字典未收录，可在「代码字典」页添加</b>')+'</td><td><small class="src">'+(e.d? esc(e.d.src||'') : '')+'</small></td></tr>'; });
+    arr.forEach(c => { const e = cnt[c]; s += '<tr><td><span class="chip '+(c[0]==='G'?'G':'M')+' editable" data-code="'+esc(c)+'">'+c+'</span></td><td>'+e.n+'</td><td class="mn">'+(e.txt? esc(e.txt):'<b style="color:#dc2626">字典未收录，可在「代码字典」页添加</b>')+'</td><td><small class="src">'+(e.d? esc(e.d.src||'') : '')+'</small></td></tr>'; });
     return s+'</tbody></table>';
   };
   if(gs.length){ h += '<div class="stats-cat">G 代码</div>'+tbl(gs); }
@@ -697,32 +832,184 @@ function renderFormula(){
 /* ============================================================
    四、字典编辑器
    ============================================================ */
-function renderDict(){
-  const el = document.getElementById('outDict');
+// ① 本机校准表：可增删改，压在内置资料之上
+function machineTableHtml(){
   let h = '<table class="dict-edit"><thead><tr><th>代码</th><th>含义</th><th>参数说明</th><th>备注</th><th>来源</th><th></th></tr></thead><tbody>';
-  DICT.forEach((d, i) => {
-    h += '<tr>'
-      +'<td><input data-k="code" data-i="'+i+'" value="'+esc(d.code)+'"></td>'
-      +'<td><input data-k="name" data-i="'+i+'" value="'+esc(d.name)+'"></td>'
-      +'<td><input data-k="args" data-i="'+i+'" value="'+esc(d.args||'')+'"></td>'
-      +'<td><input data-k="note" data-i="'+i+'" value="'+esc(d.note||'')+'"></td>'
-      +'<td><input data-k="src" data-i="'+i+'" value="'+esc(d.src||'')+'" style="width:70px"></td>'
-      +'<td><button class="btn" data-del="'+i+'" style="padding:2px 8px;color:#dc2626">删</button></td>'
+  MACHINE.forEach((d, i) => {
+    const search = (d.code+' '+d.name+' '+(d.args||'')+' '+(d.note||'')).toLowerCase();
+    h += '<tr data-search="'+esc(search)+'" data-code="'+esc(d.code)+'">'
+      +'<td><input data-tbl="m" data-k="code" data-i="'+i+'" value="'+esc(d.code)+'"></td>'
+      +'<td><input data-tbl="m" data-k="name" data-i="'+i+'" value="'+esc(d.name)+'"></td>'
+      +'<td><input data-tbl="m" data-k="args" data-i="'+i+'" value="'+esc(d.args||'')+'"></td>'
+      +'<td><input data-tbl="m" data-k="note" data-i="'+i+'" value="'+esc(d.note||'')+'"></td>'
+      +'<td><input data-tbl="m" data-k="src" data-i="'+i+'" value="'+esc(d.src||'')+'" style="width:82px"></td>'
+      +'<td><button class="btn" data-tbl="m" data-del="'+i+'" style="padding:2px 8px;color:#dc2626">删</button></td>'
       +'</tr>';
   });
-  el.innerHTML = h+'</tbody></table>';
-  el.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('change', e => {
+  return h+'</tbody></table>';
+}
+// ② 资料表：只读；行尾「本机改」把这条复制到上面那层
+function refTableHtml(arr, key){
+  let h = '<table class="dict-edit"><thead><tr><th>代码</th><th>含义</th><th>参数说明</th><th>备注</th><th>来源</th><th></th></tr></thead><tbody>';
+  arr.forEach((d, i) => {
+    const over = machOf(d.code);
+    const search = (d.code+' '+d.name+' '+(d.args||'')+' '+(d.note||'')).toLowerCase();
+    h += '<tr data-search="'+esc(search)+'"'+(over?' style="opacity:.5"':'')+'>'
+      +'<td><code>'+esc(d.code)+'</code>'+(over?'<div><span class="badge" style="margin:2px 0 0">本机另有补充</span></div>':'')+'</td>'
+      +'<td>'+esc(d.name)+'</td><td class="mn">'+esc(d.args||'')+'</td><td class="mn">'+esc(d.note||'')+'</td>'
+      +'<td><small class="src">'+esc(d.src||'')+'</small></td>'
+      +'<td><button class="btn" data-copy="'+key+':'+i+'" style="padding:2px 6px;white-space:nowrap">本机改</button></td>'
+      +'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+function bindMachineTable(el){
+  el.querySelectorAll('[data-tbl="m"][data-k]').forEach(inp => {
+    inp.addEventListener('change', () => {
       const i = +inp.dataset.i, k = inp.dataset.k;
-      DICT[i][k] = inp.value;
-      refreshDictMap(); saveDict();
+      if(!MACHINE[i]) return;
+      MACHINE[i][k] = (k === 'code') ? normKey(inp.value) : inp.value;
+      if(k === 'code') inp.value = MACHINE[i][k];   // G0→G00、M5→M05，省得跟程序里的写法对不上
+      refreshMachineMap(); saveMachine(); flashSaved(); refreshResults();
+      const tr = inp.closest('tr');
+      if(tr){
+        tr.dataset.search = (MACHINE[i].code+' '+MACHINE[i].name+' '+(MACHINE[i].args||'')+' '+(MACHINE[i].note||'')).toLowerCase();
+        tr.dataset.code = MACHINE[i].code;
+      }
     });
   });
-  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', e => {
-    DICT.splice(+b.dataset.del, 1); refreshDictMap(); saveDict(); renderDict();
+  el.querySelectorAll('[data-tbl="m"][data-del]').forEach(b => b.addEventListener('click', () => {
+    MACHINE.splice(+b.dataset.del, 1); refreshMachineMap(); saveMachine(); flashSaved(); refreshResults(); renderDict();
   }));
 }
-function refreshDictMap(){ Object.keys(dictMap).forEach(k=>delete dictMap[k]); DICT.forEach(d=>dictMap[d.code]=d); }
+// 改了字典后，已解读的内容就地更新，不用再点一次「解读」
+function refreshResults(){
+  if(!parsedLines.length) return;
+  parseProgram(document.getElementById('src').value);
+  renderLines(); renderSeg(); renderStat();
+}
+function renderDict(){
+  const el = document.getElementById('outDict');
+  let h = '<div class="stats-cat">① 本机校准 <span style="font-weight:400">— 只放你这台机器（B0206V）的补充说明：解读时<b>追加在原解释后面</b>，不顶替资料原意</span></div>';
+  h += MACHINE.length
+    ? machineTableHtml()
+    : '<p class="mn" style="margin:4px 0 10px">（目前没有本机校准条目。在下面资料表里点「本机改」即可复制过来写，或点上面「新增本机条目」自己加。）</p>';
+  h += '<div class="stats-cat" style="margin-top:16px">② 内置资料（只读参考） <span style="font-weight:400">— 厂家培训资料整理的通用含义，本页不会改写它；要按本机加说明，点行尾「本机改」</span></div>';
+  h += '<div class="stats-cat" style="color:var(--ink2);font-weight:500">T 码（少数 T 码不是换刀）</div>' + refTableHtml(TDICT, 't');
+  h += '<div class="stats-cat" style="color:var(--ink2);font-weight:500">G / M 码</div>' + refTableHtml(DICT, 'gm');
+  el.innerHTML = h;
+  bindMachineTable(el);
+  el.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+    const p = b.dataset.copy.split(':');
+    const src = (p[0]==='t' ? TDICT : DICT)[+p[1]];
+    if(src) copyToMachine(src);
+  }));
+  applyDictFilter();
+}
+// 把资料里的一条复制进本机校准层（已存在就跳过去改那一行）
+function copyToMachine(src){
+  if(machOf(src.code)){ focusMachineRow(src.code); flashSaved('「'+src.code+'」本机校准表里已有，直接在①里改'); return; }
+  MACHINE.push({code:src.code, name:src.name, args:src.args||'', note:src.note||'', src:'本机校准'});
+  refreshMachineMap(); saveMachine(); renderDict(); refreshResults(); focusMachineRow(src.code); flashSaved();
+}
+function focusMachineRow(code){
+  const f = document.getElementById('dictFilter');
+  if(f){ f.value = code; applyDictFilter(); }
+  const tr = document.querySelector('#outDict tr[data-code="'+code+'"]');
+  const inp = tr && tr.querySelector('input[data-k="name"]');
+  if(inp) inp.focus();
+}
+
+/* ============================================================
+   四之二、点解读结果里的代码块 → 就地改本机说明
+   ============================================================ */
+let editingCode = null;
+function baseTextOf(code){
+  const k = normKey(code);
+  const b = dictMap[k];
+  if(b) return b.name;
+  const td = tdictMap[k];
+  if(td) return '资料注：'+td.name+(td.src? '（'+td.src+'）':'');
+  if(/^T/.test(k)) return '通用规则：刀号 + 刀补（T0606 = 06号刀+06号补）';
+  return '（内置资料里没有这个码）';
+}
+function openChipEditor(code, anchor){
+  const key = normKey(code);
+  if(!key || !anchor) return;
+  editingCode = key;
+  const m = machOf(key);
+  const box = document.getElementById('chipEdit');
+  const row = anchor.closest? anchor.closest('tr') : null;
+  const mn = row? row.querySelector('td:last-child .mn') : null;
+  document.getElementById('chipEditTitle').textContent = '修改 ' + key;
+  document.getElementById('chipEditRef').innerHTML = '<b>'+(mn? '现在这行的解读' : '内置资料')+'：</b>'
+    + esc(mn? mn.textContent : baseTextOf(key));
+  document.getElementById('chipEditName').value = m? m.name : '';
+  document.getElementById('chipEditNote').value = m? (m.note||'') : '';
+  document.getElementById('chipEditDel').style.display = m? '' : 'none';
+  document.getElementById('chipEditMsg').textContent = '';
+  box.style.display = 'block';
+  // 贴在代码块旁边；下面放不下就翻到上面
+  const r = anchor.getBoundingClientRect();
+  const w = box.offsetWidth, h = box.offsetHeight;
+  const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+  let left = window.scrollX + r.left;
+  let top  = window.scrollY + r.bottom + 6;
+  if(left + w > window.scrollX + vw - 10) left = window.scrollX + vw - w - 10;
+  if(r.bottom + h + 14 > vh) top = window.scrollY + r.top - h - 6;
+  box.style.left = Math.max(8, left)+'px';
+  box.style.top  = Math.max(8, top)+'px';
+  document.getElementById('chipEditName').focus();
+}
+function closeChipEditor(){
+  const box = document.getElementById('chipEdit');
+  if(box) box.style.display = 'none';
+  editingCode = null;
+}
+function saveChipEditor(){
+  const key = editingCode; if(!key) return;
+  const name = document.getElementById('chipEditName').value.trim();
+  const note = document.getElementById('chipEditNote').value.trim();
+  if(!name){ document.getElementById('chipEditMsg').textContent = '「本机含义」不能空着'; return; }
+  const i = MACHINE.findIndex(x => normKey(x.code) === key);
+  const item = {code:key, name:name, args:'', note:note, src:'B0206V'};
+  if(i >= 0) MACHINE[i] = Object.assign({}, MACHINE[i], item); else MACHINE.push(item);
+  refreshMachineMap(); saveMachine(); refreshResults();
+  toast('已保存「'+key+'」的本机说明（追加在原解释后面）');
+  closeChipEditor();
+}
+function deleteChipEditor(){
+  const key = editingCode; if(!key) return;
+  const i = MACHINE.findIndex(x => normKey(x.code) === key);
+  if(i >= 0){
+    MACHINE.splice(i, 1); refreshMachineMap(); saveMachine(); refreshResults();
+    toast('已删掉「'+key+'」的本机补充，回到原解释');
+  }
+  closeChipEditor();
+}
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.style.display = 'none'; }, 2400);
+}
+function applyDictFilter(){
+  const q = (document.getElementById('dictFilter').value||'').trim().toLowerCase();
+  document.querySelectorAll('#outDict tr[data-search]').forEach(tr => {
+    tr.style.display = (!q || tr.dataset.search.includes(q)) ? '' : 'none';
+  });
+}
+let savedTimer = null;
+function flashSaved(msg){
+  const s = document.getElementById('dictSaved');
+  if(!s) return;
+  s.textContent = msg || '已保存到本机浏览器 ✓';
+  clearTimeout(savedTimer);
+  savedTimer = setTimeout(()=>{ s.textContent = ''; }, 2600);
+}
 
 /* ============================================================
    五、OCR（Tesseract.js，懒加载）
@@ -924,15 +1211,17 @@ document.getElementById('btnOcrUse').addEventListener('click', ()=>{
 });
 
 // 字典编辑按钮
+document.getElementById('dictFilter').addEventListener('input', applyDictFilter);
 document.getElementById('btnDictAdd').addEventListener('click', ()=>{
-  DICT.push({code:'G000', name:'新代码含义', args:'', note:'', src:'自定义'});
-  saveDict(); renderDict();
+  MACHINE.push({code:'T0000', name:'本机含义（自己写）', args:'', note:'', src:'本机校准'});
+  saveMachine(); renderDict(); refreshResults(); focusMachineRow('T0000'); flashSaved();
 });
 document.getElementById('btnDictExport').addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(DICT, null, 2)], {type:'application/json'});
+  const data = {format:'tsugami-machine-dict-v3', note:'只导出「本机校准」层；内置资料是通用的，不用备份', machine:MACHINE};
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = '走心机代码字典.json';
+  a.download = '走心机本机校准字典.json';
   a.click();
 });
 document.getElementById('btnDictImport').addEventListener('click', ()=>document.getElementById('dictIn').click());
@@ -942,17 +1231,51 @@ document.getElementById('dictIn').addEventListener('change', e=>{
   r.onload = ()=>{
     try{
       const a = JSON.parse(r.result);
-      if(!Array.isArray(a)) throw 0;
-      DICT.length = 0; a.forEach(x=>DICT.push(x));
-      refreshDictMap(); saveDict(); renderDict();
+      let rows = null;
+      if(Array.isArray(a)) rows = a;                                        // 老格式：整份字典 → 当作本机校准
+      else if(Array.isArray(a.machine)) rows = a.machine;                   // 新格式：本机校准层
+      else if(Array.isArray(a.dict) || Array.isArray(a.tdict))              // v2 格式：两层合一的过渡版
+        rows = [].concat(a.dict||[], a.tdict||[]);
+      if(!rows) throw 0;
+      let n = 0;
+      rows.forEach(x=>{
+        if(!x || !x.code) return;
+        const it = {code:normKey(x.code), name:x.name||'', args:x.args||'', note:x.note||'', src:x.src||'导入'};
+        const i = MACHINE.findIndex(m=>m.code===it.code);
+        if(i>=0) MACHINE[i] = it; else MACHINE.push(it);
+        n++;
+      });
+      refreshMachineMap(); saveMachine(); renderDict(); refreshResults();
+      flashSaved('已导入 '+n+' 条到「本机校准」（资料层未受影响）');
     }catch(err){ alert('JSON 格式不对'); }
   };
   r.readAsText(f);
 });
 document.getElementById('btnDictReset').addEventListener('click', ()=>{
-  DICT.length = 0; DICT_DEFAULT.forEach(x=>DICT.push(JSON.parse(JSON.stringify(x))));
-  refreshDictMap(); saveDict(); renderDict();
+  if(!confirm('只把「① 本机校准」还原成初始内容（含 T2100）——内置资料本来就不会被动过。\n你自己加的本机条目会丢失，建议先点「导出本机校准」备份。确定继续？')) return;
+  MACHINE.length = 0; MACHINE_DEFAULT.forEach(x=>MACHINE.push(JSON.parse(JSON.stringify(x))));
+  refreshMachineMap(); saveMachine(); renderDict(); refreshResults(); flashSaved();
 });
+
+// 点解读结果 / 代码统计里的代码块 → 就地改本机说明
+['outLines','outStat'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    const c = e.target.closest && e.target.closest('.chip.editable');
+    if(c && c.dataset.code) openChipEditor(c.dataset.code, c);
+  });
+});
+document.getElementById('chipEditClose').addEventListener('click', closeChipEditor);
+document.getElementById('chipEditSave').addEventListener('click', saveChipEditor);
+document.getElementById('chipEditDel').addEventListener('click', deleteChipEditor);
+document.getElementById('chipEditName').addEventListener('keydown', e => { if(e.key === 'Enter') saveChipEditor(); });
+document.addEventListener('click', e => {          // 点别处收起
+  const box = document.getElementById('chipEdit');
+  if(box.style.display !== 'block') return;
+  if(box.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('.chip.editable')) return;
+  closeChipEditor();
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeChipEditor(); });
 
 renderFormula();
 </script>
